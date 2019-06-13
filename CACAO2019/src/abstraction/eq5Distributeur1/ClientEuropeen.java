@@ -21,25 +21,40 @@ public class ClientEuropeen implements IActeur {
 	private Journal journal;
 	private Chocolat uniqueProduit;
 	private int quantiteParStep;
+	private boolean equitable;
+	private boolean sansHuileDePalme;
+	private Gamme gamme;
 	
+	/** @author Erwann DEFOY */
 	public String getNom() {
-		return "CL"+this.numero;
+		return "Client Europeen"+this.numero;
 	}
-
+	
+	/** @author Erwann DEFOY */
 	public void initialiser() {
 	}
 
+	/** V2 @author Erwann DEFOY */
+	public ClientEuropeen() {
+		NB_CLIENT++;
+		int quantiteParStep = 100;
+		this.numero = NB_CLIENT;
+		this.journal = new Journal("Journal Européen");
+		Monde.LE_MONDE.ajouterJournal(this.journal);
+	}
+
+	/** @author Erwann DEFOY */
 	public ClientEuropeen(Chocolat uniqueProduit, int quantiteParStep) {
 		System.out.println("creation client europeen");
 		NB_CLIENT++;
 		this.numero = NB_CLIENT;
 		this.uniqueProduit = uniqueProduit;
 		this.quantiteParStep = quantiteParStep;
-		this.journal = new Journal("Journal"+this.getNom());
+		this.journal = new Journal("Journal "+this.getNom());
 		Monde.LE_MONDE.ajouterJournal(this.journal);
 	}
 
-
+	/** @author Erwann DEFOY */
 	public void next() {
 		this.journal.ajouter("Step "+Monde.LE_MONDE.getStep()+" : tentative d'achat de "+quantiteParStep+" de "+this.uniqueProduit+" ____________");
 		double quantiteAchetee = 0.0;
@@ -59,7 +74,7 @@ public class ClientEuropeen implements IActeur {
 						quantiteEnVente = s.get(this.uniqueProduit);
 						this.journal.ajouter("Step "+Monde.LE_MONDE.getStep()+" : "+((IActeur)dist).getNom()+" vend la quantite de "+quantiteEnVente+" a "+dist.getPrix(this.uniqueProduit));
 						if (quantiteEnVente>0.0) { // dist vend le chocolat recherche
-							if (distributeurDeQualite==null || getNoteQualite(dist, this.uniqueProduit)>meilleureQualite) { // recherche si le produit est de meilleur qualité
+							if ((distributeurDeQualite==null || getNoteQualite(dist, this.uniqueProduit)>meilleureQualite) && dist.getPrix(this.uniqueProduit) < 10 ) { // recherche si le produit est de meilleur qualité
 								distributeurDeQualite = dist;
 								quantiteEnVenteMeilleur = quantiteEnVente;
 								meilleureQualite = getNoteQualite(dist, this.uniqueProduit);
@@ -83,6 +98,7 @@ public class ClientEuropeen implements IActeur {
 		} while (quantiteAchetee<this.quantiteParStep && distributeurDeQualite!=null);
 	}
 	
+	/** @author Erwann DEFOY */
 	public double NoteQualite(Chocolat c) {
 		int N = 0;
 		if (c.isEquitable()) {
@@ -99,9 +115,9 @@ public class ClientEuropeen implements IActeur {
 		return 10*N/4;
 	}
 	
+	/** @author Erwann DEFOY */
 	public double getNoteQualite (IDistributeurChocolat dist, Chocolat c) {
 		return NoteQualite (c);
-		
 	}
 
 }

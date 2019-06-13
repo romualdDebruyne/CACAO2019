@@ -7,21 +7,23 @@ public class CompteBancaire extends Indicateur {
 	private double compte;
 	
 	//Cette classe sert à gérer notre compte bancaire pour y imposer des règles propres au compte
-	
+	/** @author Estelle BONNET */
 	public CompteBancaire(String nom , IActeur createur, double compte) {
 		super(nom, createur, compte);
 	}
 	
+	/** @author Estelle BONNET */
 	public CompteBancaire(String nom, IActeur createur) {
 		super(nom, createur);
 	}
 	
+	/** @author Estelle BONNET */
 	public double getCompteBancaire() {
 		return this.getValeur();
 	}
 	
 	/**
-	 * @author Erine DUPONT, Estelle BONNET
+	 * @author Erine DUPONT & Estelle BONNET
 	 */
 	public double Payer (IActeur auteur, double paiement) {
 		double nouveausolde = this.getValeur() - paiement;
@@ -36,6 +38,9 @@ public class CompteBancaire extends Indicateur {
 		}
 	}
 	
+	/** 
+	 * @author Erine DUPONT & Estelle BONNET 
+	 * */
 	public void RecevoirPaiement (IActeur auteur, double paiement) {
 		double nouveausolde = this.getValeur() + paiement;
 		if (paiement <0.0) {
