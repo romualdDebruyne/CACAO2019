@@ -116,12 +116,13 @@ public void recolte(Feve f) {
 		if (this.numStep <= 6 || this.numStep >= 21 || (this.numStep >= 9 && this.numStep <= 14)) {
 			Random rand=new Random();
 			this.maladie_predateurs=-rand.nextInt(200)/1000;
-			this.meteo=rand.nextInt(200)/1000-1;
-			double qualitePRoduction=maladie_predateurs+meteo;
+			this.meteo=rand.nextInt(200)/1000-0.1;
+			double qualitePRoduction = maladie_predateurs+meteo;
 			//double qualiteProduction = (Math.random() - 0.5) / 2.5 + 1; // entre 0.8 et 1.2
 			double nouveauStock = this.gestionnaireFeve.getStock(f)
-						+ this.gestionnaireFeve.getProductionParStep(f) * (1 + qualitePRoduction); 
+						+ this.gestionnaireFeve.getProductionParStep(f) * (1 + qualitePRoduction);		
 			this.gestionnaireFeve.setStock(this, f, nouveauStock);}}
+
 
 
 public void payerCoutsProd() {
@@ -205,45 +206,47 @@ public void payerCoutsProd() {
 		
 		if (prixVendeur == getCoutProduction(cc.getProduit()) * 1.01) { 
 			//On pose une marge minimale de 1% du cout de production
-			cc.getListePrixAuKilo().add(prixVendeur);
+			cc.ajouterPrixAuKilo(prixVendeur);
 		} else {
 			if (prixAcheteur < getCoutProduction(cc.getProduit())*1.01) {
 				//On s'assure de conserver la marge minimale 
 				prixVendeur = getCoutProduction(cc.getProduit()) * 1.01;
-				cc.getListePrixAuKilo().add(prixVendeur);
+				cc.ajouterPrixAuKilo(prixVendeur);
 			} else {
 		
 				if ((prixVendeur - prixAcheteur) < 0.05 * prixVendeur) { 
 				// On arrête la négociation si la différence de prix est suffisamment faible (5% du prixVendeur)
 					prixVendeur = prixAcheteur;
-					cc.getListePrixAuKilo().add(prixVendeur);
+					cc.ajouterPrixAuKilo(prixVendeur);
 				} else { 
 			
 					if (prixAcheteur >= 0.75 * prixVendeur && prixAcheteur * 1.1 >= getCoutProduction(cc.getProduit())) { 
 						// on ne fait une proposition que si l'acheteur ne demande pas un prix trop bas, tout en respectant la marge minimale
 						prixVendeur = prixAcheteur * 1.1; // on augmente le prix proposé par l'acheteur de 10%
-						cc.getListePrixAuKilo().add(prixVendeur);
+						cc.ajouterPrixAuKilo(prixVendeur);
 
 					} else {
 						if (prixVendeur * 0.90 < getCoutProduction(cc.getProduit())) {
 
 							//On s'assure de conserver notre marge minimale
 							prixVendeur = getCoutProduction(cc.getProduit()) * 1.01;
+							cc.ajouterPrixAuKilo(prixVendeur);
 						
 						} else {
 							prixVendeur *= 0.90; // On diminue le prix proposé de 10%
-							cc.getListePrixAuKilo().add(prixVendeur);
+							cc.ajouterPrixAuKilo(prixVendeur);
 						}
 					}
 				}
 			}
 		}
 	}
+	
 
 	
 	//A modifier après détermination des couts de production
 	public double getCoutProduction(Feve f) {
-		return 1800000;	
+		return 0;	
 		
 		
 	}
@@ -326,7 +329,6 @@ public void payerCoutsProd() {
 		return livraison;
 	}
 
-	
 	
 }
 

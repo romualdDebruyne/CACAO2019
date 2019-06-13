@@ -7,6 +7,7 @@ import java.util.List;
 import abstraction.eq7Romu.produits.Feve;
 
 public class Arbre {
+	public static final int QT_ARBRE_AN = 18225;
 	private HashMap<Feve, List<Integer >> nbArbres;
 	private HashMap<Feve, Integer> nbtot;
 	
@@ -30,13 +31,13 @@ public class Arbre {
 		 
 		 for (Feve f : this.nbArbres.keySet()) {
 			 for(int i=0;i<37;i++) {
-				 this.nbArbres.get(f).add(18225);
-				 int t=this.nbtot.get(f)+18225;
-				 this.nbtot.replace(f, t);
+				 this.nbArbres.get(f).add(Arbre.QT_ARBRE_AN);
+				 int t=this.nbtot.get(f)+Arbre.QT_ARBRE_AN;
+				 this.nbtot.put(f,t);//replace(f, t);
 	
 			 }
 			 for(int i=0;i<3;i++) {
-				 this.nbArbres.get(f).add(18225);}
+				 this.nbArbres.get(f).add(Arbre.QT_ARBRE_AN);}
 			
 		 }
 	}
@@ -46,7 +47,7 @@ public class Arbre {
 		 for (Feve f : this.nbArbres.keySet()) {
 			 int arbreMort=this.nbArbres.get(f).remove(0);
 			 int nouveauTot=this.nbtot.get(f)-arbreMort+this.nbArbres.get(f).get(36);
-			 this.nbtot.replace(f, nouveauTot);
+			 this.nbtot.put(f, nouveauTot); // replace(f, nouveauTot)
 			 this.nbArbres.get(f).add(nouveaux.get(f));
 		 }
 		
@@ -56,7 +57,7 @@ public class Arbre {
 		 for (Feve f : this.nbArbres.keySet()) {
 			 int arbreMort=this.nbArbres.get(f).remove(0);
 			 int nouveauTot=this.nbtot.get(f)-arbreMort+this.nbArbres.get(f).get(36);
-			 this.nbtot.replace(f, nouveauTot);
+			 this.nbtot.put(f, nouveauTot);
 			 this.nbArbres.get(f).add(18225);
 		 }
 		
