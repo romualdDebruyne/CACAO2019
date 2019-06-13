@@ -142,7 +142,7 @@ public class Client1 implements IActeur{
 	
 //Implémentation de la liste de distributeurs comportant le produit désiré par le client en stock 
 //avec une quantité supérieure ou égale à la quantité recherché par le client qui vaut quantitemoyenne*temporalité.get(step)
-	
+//*	
 	public void setDistributeurs(int step) {
 		
 	for (IActeur D : Monde.LE_MONDE.getActeurs()) {
@@ -155,11 +155,11 @@ public class Client1 implements IActeur{
 		}
 	}
 	
-	
+	//*/
 	
 	 
     // Liste des notes sur 10 du chocolat désiré par le client selon le distributeur. Ces notes sont basées sur les préférences du client en terme de prix/quantité/qualité
-	
+//*	
 	public List<Double> Offres (int step){
 	List<Double> K  = new ArrayList<Double>();
 	this.setDistributeurs(step); 
@@ -188,7 +188,7 @@ public class Client1 implements IActeur{
 	}	
 	
 	
-	
+	//*/
 	//Evaluation du  distributeur à choisir à un step donné : on multiplie les elements de la  liste de notes par un facteur de fidélité calculé grâce aux occurences des distributeurs
 	// dans le journal.
 	//On obtient alors une liste de notes finales et on cherche la note maximale : le distributeur correspondant au chocolat atteignant ce maximum sera choisi par le client
@@ -199,7 +199,9 @@ public class Client1 implements IActeur{
 
 	
 	public void next() {
-		/*IDistributeurChocolat D = null ;
+		System.out.println("next client1");
+		/*
+		IDistributeurChocolat D = null ;
 		int step = Monde.LE_MONDE.getStep();
 		double notemax =0.0;
 		List<Double> Notesfinales = new ArrayList<Double>();
@@ -232,7 +234,7 @@ public class Client1 implements IActeur{
 		this.journal.ajouter(""+ D);
 		this.journal.ajouter("" +numero);
 		this.journal.ajouter(""+quantitemoyenne*temporalite.get(step));
-	*/
+	//*/
 	}
 
 }

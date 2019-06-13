@@ -30,6 +30,7 @@ public class ClientEuropeen implements IActeur {
 	}
 
 	public ClientEuropeen(Chocolat uniqueProduit, int quantiteParStep) {
+		System.out.println("creation client europeen");
 		NB_CLIENT++;
 		this.numero = NB_CLIENT;
 		this.uniqueProduit = uniqueProduit;

@@ -78,9 +78,12 @@ public class Indicateur extends Observable {
 	 */
 	public void setValeur(IActeur auteur, double valeur) {
 		this.historique.ajouter(auteur, Monde.LE_MONDE.getStep(), valeur);
+		if (this.getNom().contains("HG_E_SHP")) System.out.println(" historique ajout de "+auteur+" - "+Monde.LE_MONDE.getStep()+" - "+valeur);
 		this.courbe.ajouter(Monde.LE_MONDE.getStep(), this.getValeur());
 		this.setChanged();
 		this.notifyObservers("setValeur");
+		if (this.getNom().contains("HG_E_SHP")) System.out.println(" notify "+this.getValeur());
+		if (this.getNom().contains("HG_E_SHP")) System.out.println("indicateur "+this.getNom()+" notify setvaleur "+valeur);
 	}
 	
 	/**
@@ -89,6 +92,7 @@ public class Indicateur extends Observable {
 	 * @param delta>0
 	 */
 	public void ajouter(IActeur auteur, double delta) {
+		if (this.getNom().contains("HG_E_SHP")) System.out.println(" indicateur "+this.getNom()+" ajouter :"+this.getValeur()+" --> "+( this.getValeur()+delta));
 		this.setValeur(auteur, this.getValeur()+delta);
 	}
 	

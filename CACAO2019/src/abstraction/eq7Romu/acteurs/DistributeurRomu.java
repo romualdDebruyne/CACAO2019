@@ -111,32 +111,44 @@ public class DistributeurRomu implements IActeur, IAcheteurContratCadre<Chocolat
 		ContratCadre<Chocolat> res=null;
         // on determine combien il resterait sur le compte si on soldait tous les contrats en cours.
 		double solde = this.soldeBancaire.getValeur();
+		this.journal.ajouter("Determination du solde une fois tous les contrats en cours payes");
+		this.journal.ajouter("- solde="+solde);
 		for (ContratCadre<Chocolat> cc : this.contratsEnCours) {
 			solde = solde - cc.getMontantRestantARegler();
 		}
+		this.journal.ajouter("--> solde="+solde);
 
 		if (solde>10000.0) { // On ne cherche pas a etablir d'autres contrats d'achat si le compte bancaire est trop bas
 			List<IVendeurContratCadre<Chocolat>> vendeurs = new ArrayList<IVendeurContratCadre<Chocolat>>();
+	           this.journal.ajouter("  recherche vendeur d'au moins 100 de "+this.uniqueProduit);
 			for (IActeur acteur : Monde.LE_MONDE.getActeurs()) {
 				if (acteur instanceof IVendeurContratCadre) {
 					IVendeurContratCadre vacteur = (IVendeurContratCadre)acteur;
 					StockEnVente stock = vacteur.getStockEnVente();
 					if (stock.get(this.uniqueProduit)>100.0) {// on souhaite faire des contrats d'au moins 100kg
+						this.journal.ajouter("   "+(acteur.getNom())+" vend "+stock.get(this.uniqueProduit)+" de "+this.uniqueProduit);
 						vendeurs.add((IVendeurContratCadre<Chocolat>)vacteur);
+					} else {
+						this.journal.ajouter("   "+(acteur.getNom())+" ne vend que "+stock.toHtml());
 					}
 				}
 			}
 			if (vendeurs.size()>=1) {
 				IVendeurContratCadre<Chocolat> vendeur = vendeurs.get( (int)( Math.random()*vendeurs.size())); // ici tire au hasard plutot que de tenir compte des stocks en vente et des prix
 				// On determine la quantite qu'on peut esperer avec le tiers du reste de notre solde bancaire
+                this.journal.ajouter(" Determination de la quantite achetable avec une somme de "+String.format("%.3f",solde/3.0));
 				double quantite = 100.0; // on souhaite faire des contrats d'au moins 100 kg
 				double prix = vendeur.getPrix(this.uniqueProduit, quantite);
-				while (!Double.isNaN(prix) && prix<solde/3.0 ) {
+				this.journal.ajouter("prix="+prix+" pour quantite="+quantite+" --> "+(quantite*prix));
+				while (!Double.isNaN(prix) && prix*quantite<solde/3.0 ) {
 					quantite=quantite*1.5;
 					prix = vendeur.getPrix(this.uniqueProduit,  quantite);
+					this.journal.ajouter("prix="+prix+" pour quantite="+quantite+" --> "+(quantite*prix));
 				}
 				quantite = quantite/1.5;
 				res = new ContratCadre<Chocolat>(this, vendeur, this.uniqueProduit, quantite);
+			}else {
+				this.journal.ajouter("   Aucun vendeur trouve --> pas de nouveau contrat a ce step");
 			}
 		} else {
 			this.journal.ajouter("   Il ne reste que "+solde+" une fois tous les contrats payes donc nous ne souhaitons pas en creer d'autres pour l'instant");

@@ -23,6 +23,7 @@ public class Transformateur2AcheteurCC implements IAcheteurContratCadre<Feve> {
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Override
 	public ContratCadre<Feve> getNouveauContrat() {
+		//return null;/*
 		// Calcul du solde que l'on peut dépenser en fonction des contrats sortants et entrants
 		double solde = t2.soldeBancaire.getValeur();
 		for(ContratCadre<Feve> cc : t2.contratsFevesEnCours)
@@ -89,10 +90,13 @@ public class Transformateur2AcheteurCC implements IAcheteurContratCadre<Feve> {
 		}
 		else
 			return null;
+			
+		//	*/
 	}
 
 	@Override
 	public void proposerEcheancierAcheteur(ContratCadre<Feve> cc) {
+		//*
 		if(cc.getEcheancier() == null) { // il n'y a pas encore eu de contre-proposition de la part du vendeur
 			// On répartit la quantité sur 12 steps (3 mois)
 			cc.ajouterEcheancier(new Echeancier(Monde.LE_MONDE.getStep(), 12, cc.getQuantite() / 12));
@@ -110,7 +114,7 @@ public class Transformateur2AcheteurCC implements IAcheteurContratCadre<Feve> {
 				else if(duree < 12) 
 					cc.ajouterEcheancier(new Echeancier(ech.getStepDebut(), ech.getNbEcheances()+1, cc.getQuantite()/(ech.getNbEcheances()+1)));
 			}
-		}
+		}//*/
 	}
 
 	@Override
@@ -138,6 +142,7 @@ public class Transformateur2AcheteurCC implements IAcheteurContratCadre<Feve> {
 			throw new IllegalArgumentException("Appel de la méthode réceptionner de Transformateur2 avec une quantité égale à " + quantite);
 		
 		t2.stockFeves.get(produit).ajouterTas(new TasFeve(quantite, cc.getPrixAuKilo()));		
+		
 	}
 
 	@Override

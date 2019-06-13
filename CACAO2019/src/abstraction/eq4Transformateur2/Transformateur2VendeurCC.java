@@ -38,20 +38,24 @@ public class Transformateur2VendeurCC implements IVendeurContratCadre<Chocolat> 
 	//Minh Tri
 	@Override
 	public double getPrix(Chocolat produit, Double quantite) {
-		if(!catalogueChocolat.containsKey(produit))
+		if(!catalogueChocolat.containsKey(produit)) {
+			System.out.println(" getPrix avec chocolat pas au catalogue "+produit);
+			System.out.println(" catalogue : "+catalogueChocolat);
 			return Double.MAX_VALUE;
-		return catalogueChocolat.get(produit)*quantite;
+		}
+		return catalogueChocolat.get(produit);//*quantite;
 	}
 
 	@Override
 	public void proposerEcheancierVendeur(ContratCadre<Chocolat> cc) {
+		//*
 		if (Math.random()<0.4) { // 40% de chances d'accepter l'échéancier
 			cc.ajouterEcheancier(new Echeancier(cc.getEcheancier())); // on accepte la proposition de l'acheteur car on a la quantite en stock 
 		} else { // 60% de chance de proposer un echeancier etalant sur un ou deux step de plus, de façon aléatoire
 			Random r = new Random();
 			cc.ajouterEcheancier(new Echeancier(cc.getEcheancier().getStepDebut(), cc.getEcheancier().getNbEcheances()+(r.nextInt(1)+1), cc.getQuantite()/(cc.getEcheancier().getNbEcheances()+(r.nextInt(1)+1))));
 		}
-		
+		//*/
 	}
 	@Override
 	public void proposerPrixVendeur(ContratCadre<Chocolat> cc) {
@@ -80,7 +84,8 @@ public class Transformateur2VendeurCC implements IVendeurContratCadre<Chocolat> 
 
 	@Override
 	public double livrer(Chocolat produit, double quantite, ContratCadre<Chocolat> cc) {
-		if (produit==null || t2.getStockEnVente().get(produit) == 0) {
+		if (produit==null || //t2.
+				getStockEnVente().get(produit) == 0) {
 			System.out.println(cc.getAcheteur());
 			throw new IllegalArgumentException("Appel de la methode livrer de Transformateur2 avec un produit ne correspondant pas au chocolat produit");
 		}

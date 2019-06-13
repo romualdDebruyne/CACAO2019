@@ -148,6 +148,7 @@ public class Distributeur1 implements IActeur, IAcheteurContratCadre, IDistribut
 	 */
 	public void proposerPrixAcheteur(ContratCadre cc) {
 		double prixVendeur = cc.getPrixAuKilo();
+		journal.ajouter("proposerPrixAcheteur : prix sur contrat = "+prixVendeur);
 		/*if (Math.random()<0.25) { // probabilite de 25% d'accepter
 			cc.ajouterPrixAuKilo(cc.getPrixAuKilo());
 		} else {
@@ -166,6 +167,7 @@ public class Distributeur1 implements IActeur, IAcheteurContratCadre, IDistribut
 	@Override
 	public void notifierAcheteur(ContratCadre cc) {
 		this.contratsEnCours.add(cc);
+		System.out.println("CONTRAT EQ5 : "+cc);
 	}
 
 	/**@author Erine DUPONT

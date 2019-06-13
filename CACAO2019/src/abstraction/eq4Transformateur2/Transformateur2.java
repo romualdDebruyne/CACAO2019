@@ -15,7 +15,7 @@ import abstraction.fourni.Indicateur;
 import abstraction.fourni.Journal;
 import abstraction.fourni.Monde;
 
-public class Transformateur2 implements IActeur, IAcheteurContratCadre<Feve>, IVendeurContratCadre<Chocolat> {
+public class Transformateur2 implements IActeur, IAcheteurContratCadre<Feve> ,IVendeurContratCadre<Chocolat> {
 	protected Indicateur iStockFeves;
 	protected Indicateur iStockChocolat;
 	
