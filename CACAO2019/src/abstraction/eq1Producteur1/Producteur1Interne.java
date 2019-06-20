@@ -22,13 +22,18 @@ import static abstraction.fourni.Monde.*;
 
 public class Producteur1Interne implements IActeur /* , IVendeurCacaoAleatoire */ {
 
-	public static int COUT_FIXE = 1000;
-	public static int COUT_VARIABLE_STOCK = 5;
+	public static int COUT_FIXE = 00;
+	public static int COUT_VARIABLE_STOCK = 0;
 	
 	protected Indicateur stockFeves;
-	protected Stock stockCriollo=new Stock(Feve.CRIOLLO_HG_EQ,this);
-	protected Stock stockForastero=new Stock(Feve.FORASTERO_MG_NEQ,this);
-	protected Stock stockTrinitario=new Stock(Feve.TRINITARIO_MG_NEQ,this);
+	protected Stock stockCriollo;
+	protected Stock stockForastero;
+	protected Stock stockTrinitario;
+	
+	protected Plantation plantationCriollo;
+	protected Plantation plantationForastero;
+	protected Plantation plantationTrinitario;
+	 
 	protected double recolteCriollo ;
 	protected double recolteForastero ;
 	protected double recolteTrinitario ;
@@ -36,12 +41,19 @@ public class Producteur1Interne implements IActeur /* , IVendeurCacaoAleatoire *
     protected List<Double>historiqueSoldeBancaire;
 
 	//BEGIN ANTI 
+    /*
 	protected Indicateur plantationCriolloI;
 	protected Indicateur plantationForasteroI;
 	protected Indicateur plantationTrinitarioI;
-	protected HashMap<Integer, Integer> plantationCriollo;
+	*/
+	/*protected HashMap<Integer, Integer> plantationCriollo;
 	protected HashMap<Integer, Integer> plantationForastero;
 	protected HashMap<Integer, Integer> plantationTrinitario; 
+	*/
+	protected HashMap<Double, Boolean> prixCriolloAboutissantAcc;
+	protected HashMap<Double, Boolean> prixTrinitarioAboutissantAcc;
+	protected HashMap<Double, Boolean> prixForasteroAboutissantAcc;
+
 	protected int compteurSteps = 0 ;
 	public static int dureeDeVieCacaoyer = 960 ; 
 	protected int criolloPlante ; 
@@ -70,25 +82,48 @@ public class Producteur1Interne implements IActeur /* , IVendeurCacaoAleatoire *
 	protected HashMap<Feve, Double> prixAuKilo;
 	// END Pauline
 	// BEGIN ANTI
-	protected HashMap<Integer, ContratCadre<Feve>> historiqueContrats=new HashMap<Integer, ContratCadre<Feve>>();
+	protected HashMap<Integer, ContratCadre<Feve>> historiqueContrats;
 	// END ANTI
 
 	public Producteur1Interne() {
+		this.prixCriolloAboutissantAcc=new HashMap<Double, Boolean>();
+		this.prixForasteroAboutissantAcc=new HashMap<Double, Boolean>();
+		this.prixTrinitarioAboutissantAcc=new HashMap<Double, Boolean>();
 		this.stockFeves = new Indicateur("EQ1 stock feves", this, 3000);  
 		this.contratEnCours= new ArrayList<ContratCadre<Feve>> ();
 		this.historiqueSoldeBancaire= new ArrayList<Double> ();
 		Random r=new Random();
 		stepRecolteExceptionnellementReduite=r.nextInt(unAnEnSteps);
 		//BEGIN ANTI 
+		/*
 		this.plantationCriolloI = new Indicateur("EQ1 plantation criollo", this, 80);
 		this.plantationForasteroI = new Indicateur("EQ1 plantation forastero", this, 80);
 		this.plantationTrinitarioI = new Indicateur("EQ1 plantation trinitario", this, 80);
 		this.plantationCriollo = new HashMap<Integer, Integer>();
 		this.plantationForastero = new HashMap<Integer, Integer>(); 
 		this.plantationTrinitario = new HashMap<Integer, Integer>(); 
+		*/
 		
 		
-		for (int next = 0; next < dureeDeVieCacaoyer - 1; next++) {
+		this.historiqueContrats=new HashMap<Integer, ContratCadre<Feve>>();
+		
+		stockCriollo=new Stock(Feve.CRIOLLO_HG_EQ,this);
+		stockForastero=new Stock(Feve.FORASTERO_MG_NEQ,this);
+		stockTrinitario=new Stock(Feve.TRINITARIO_MG_NEQ,this);
+		
+		plantationCriollo=new Plantation(Feve.CRIOLLO_HG_EQ,this);
+		plantationForastero=new Plantation(Feve.FORASTERO_MG_NEQ,this);
+		plantationTrinitario=new Plantation(Feve.TRINITARIO_MG_NEQ,this);
+		
+		this.prixAuKilo = new HashMap<Feve, Double>();
+		prixAuKilo.put(Feve.CRIOLLO_HG_EQ, 3.5);
+		prixAuKilo.put(Feve.FORASTERO_MG_EQ, 2.5);
+		prixAuKilo.put(Feve.FORASTERO_MG_NEQ, 2.0);
+		prixAuKilo.put(Feve.TRINITARIO_MG_EQ, 2.2);
+		prixAuKilo.put(Feve.TRINITARIO_MG_NEQ, 1.5);
+		
+		
+		/*for (int next = 0; next < dureeDeVieCacaoyer - 1; next++) {
 			if ( next%unAnEnSteps == 0 ) {
 				plantationCriollo.put(next, 2);
 				plantationForastero.put(next, 2);
@@ -98,7 +133,7 @@ public class Producteur1Interne implements IActeur /* , IVendeurCacaoAleatoire *
 				plantationForastero.put(next, 0);
 				plantationTrinitario.put(next, 0);
 			}
-		}
+		}*/
 		//END ANTI 
 		this.soldeBancaire = new Indicateur("EQ1 solde bancaire", this, 100000);
 		Monde.LE_MONDE.ajouterIndicateur(this.stockFeves);
@@ -106,9 +141,9 @@ public class Producteur1Interne implements IActeur /* , IVendeurCacaoAleatoire *
 		Monde.LE_MONDE.ajouterIndicateur(this.getStockI(Feve.FORASTERO_MG_NEQ));
 		Monde.LE_MONDE.ajouterIndicateur(this.getStockI(Feve.TRINITARIO_MG_NEQ));
 		Monde.LE_MONDE.ajouterIndicateur(this.soldeBancaire);
-		Monde.LE_MONDE.ajouterIndicateur(this.plantationCriolloI);
-		Monde.LE_MONDE.ajouterIndicateur(this.plantationForasteroI);
-		Monde.LE_MONDE.ajouterIndicateur(this.plantationTrinitarioI);
+		Monde.LE_MONDE.ajouterIndicateur(this.getPlantationI(Feve.CRIOLLO_HG_EQ));
+		Monde.LE_MONDE.ajouterIndicateur(this.getPlantationI(Feve.FORASTERO_MG_NEQ));
+		Monde.LE_MONDE.ajouterIndicateur(this.getPlantationI(Feve.TRINITARIO_MG_NEQ));
 		//Monde.LE_MONDE.ajouterActeur(new SuperviseurVentesCacaoAleatoires());
 		// BEGIN Manon
 		this.journal1 = new Journal("JEQ1");
@@ -137,6 +172,17 @@ public class Producteur1Interne implements IActeur /* , IVendeurCacaoAleatoire *
 		
 		return Double.NaN;
 	}
+	
+	 public void setRecolte(Feve feve,double recolte){
+	 	if (feve.getVariete() == Variete.CRIOLLO) {
+			recolteCriollo=recolte;
+		} else if (feve.getVariete() == Variete.FORASTERO) {
+			recolteForastero=recolte;
+		} else if (feve.getVariete() == Variete.TRINITARIO) {
+			recolteTrinitario=recolte;
+		}
+	 }
+	 
 
 	
 	public void genereAlea() {
@@ -166,13 +212,14 @@ public class Producteur1Interne implements IActeur /* , IVendeurCacaoAleatoire *
 	public void next() {
 		// BEGIN Nas
 		updateStock();
-		this.soldeBancaire.retirer(this, COUT_FIXE + COUT_VARIABLE_STOCK * stockFeves.getValeur());
+		this.updatePrix();
+		getSoldeBancaire().retirer(this, COUT_FIXE + COUT_VARIABLE_STOCK * stockFeves.getValeur());
 		// END Nas
 		//BEGIN ANTI 
 		updatePlantation();
 		//END ANTI
 		//BEGINMANON
-		this.historiqueSoldeBancaire.add(this.getSoldeBancaire().getValeur());
+		this.getHistoriqueSoldeBancaire().add(this.getSoldeBancaire().getValeur());
 		for(Feve feve:this.getFeve()) {
 			this.journal1.ajouter("Prix de Vente"+ this.getPrixAuKilo().get(feve));}
 
@@ -180,18 +227,25 @@ public class Producteur1Interne implements IActeur /* , IVendeurCacaoAleatoire *
 
 	public HashMap<Feve, Double> getPrixAuKilo() {
 		// BEGIN Pauline
-		HashMap<Feve, Double> mapPrix = new HashMap<Feve, Double>();
-		mapPrix.put(Feve.CRIOLLO_HG_EQ, 3.5);
-		mapPrix.put(Feve.FORASTERO_MG_EQ, 2.5);
-		mapPrix.put(Feve.FORASTERO_MG_NEQ, 2.0);
-		mapPrix.put(Feve.TRINITARIO_MG_EQ, 2.2);
-		mapPrix.put(Feve.TRINITARIO_MG_NEQ, 1.5);
-		return mapPrix;
+		return prixAuKilo;
 		// END Pauline
 	}
+	//BEGIN MANON
+	public HashMap<Double, Boolean> getPrixAboutissantAcc(Feve feve){
+		if (feve.getVariete() == Variete.CRIOLLO) {
+			return prixCriolloAboutissantAcc;
+		} else if (feve.getVariete() == Variete.FORASTERO) {
+			return prixForasteroAboutissantAcc;
+		} else if (feve.getVariete() == Variete.TRINITARIO) {
+			return prixTrinitarioAboutissantAcc ;
+		}
+		
+		return null;
+	}
+	//END MANON
 	//BEGIN ANTI 
 
-	public Double moyenneDemandeCriollo(){
+	/*public Double moyenneDemandeCriollo(){
 		List<Double> moyenne = new ArrayList<Double>() ; 
 		for (int i=0; i<5; i++) {
 			moyenne.add(0.0);
@@ -361,23 +415,64 @@ public class Producteur1Interne implements IActeur /* , IVendeurCacaoAleatoire *
 			total += qte ;
 		}
 		return total / moyenne.size() ;}
-		
+		*/
 	//END ANTI
+	//BEGIN MANON
+	public double moyenneDemande(Feve feve) {
+		return getPlantation(feve).moyenneDemande();
+	}
+	
+	public double moyennePrixNonAccepte(Feve feve) {
+		HashMap<Double, Boolean> liste=this.getPrixAboutissantAcc(feve); // HashMap de tous les prix proposé pour la fève avec False en deuxième valeur si pas de négociation derrière
+        int i =0;
+        double moyenne=0;
+		for (Double d : liste.keySet()) {
+        	if (liste.get(d)==false) {
+        		moyenne+=d;
+        		i+=1;
+        	}
+        }
+		moyenne=moyenne/i;
+		return moyenne;
+	}
+	
+	public void updatePrix() {	
+		for (Feve produit: this.getFeve()) {
+	if(this.getHistoriqueSoldeBancaire().size()>2) { // On regarde si on est pas au premier ou deuxième step
+			if(this.moyenneDemande(produit)*2>this.getStockI(produit).getValeur() ) {
+				this.prixAuKilo.put(produit, this.getPrixAuKilo().get(produit)+0.1);}
+			
+			else {
+				//if(this.moyennePrixNonAccepte(produit)>this.getPrixAuKilo().get(produit)) {
+					if(this.getStockI(produit).getValeur()*(this.getPrixAuKilo().get(produit)-0.1)>this.getCOUT_FIXE()/3+this.getStockI(produit).getValeur()*this.getCOUT_VARIABLE_STOCK()
+							||this.getStockI(produit).getValeur()*(this.getPrixAuKilo().get(produit)-0.1)>0) {// On vérifie qu'on ne vend pas à perte
+	//	System.out.println("put "+(this.getPrixAuKilo().get(produit)-0.1));
+	//	if (this.getPrixAuKilo().get(produit)-0.1<0.0) {
+	//		System.exit(0);
+	//	}
+						this.prixAuKilo.put(produit, this.getPrixAuKilo().get(produit)-0.1);
+							}
+					else {
+					this.getPrixAboutissantAcc(produit).put(this.getPrixAuKilo().get(produit), false);}
+			}  
+	}
+	}}
+	//END MANON
 	//BEGIN ANTI
 	
 
-	
+	/*
 	public void updatePlantation() {
 		
 	
 		HashMap<Integer, Integer> plantationCriolloOld = new HashMap<Integer,Integer>(plantationCriollo);
 		HashMap<Integer, Integer> plantationForasteroOld = new HashMap<Integer, Integer>(plantationForastero);
 		HashMap<Integer, Integer> plantationTrinitarioOld = new HashMap<Integer, Integer>(plantationTrinitario);
-		
+		recolteCriollo = 0;
+		recolteTrinitario = 0;
+		recolteForastero = 0;
 		for (int next = 0; next < dureeDeVieCacaoyer - 1; next++) {
-			recolteCriollo = 0;
-			recolteTrinitario = 0;
-			recolteForastero = 0;
+			
 			plantationCriollo.put(next + 1 , plantationCriolloOld.get(next));
 			plantationForastero.put(next + 1 , plantationForasteroOld.get(next));
 			plantationTrinitario.put( next + 1 , plantationTrinitarioOld.get(next));
@@ -409,15 +504,30 @@ public class Producteur1Interne implements IActeur /* , IVendeurCacaoAleatoire *
 			plantationTrinitarioI.ajouter(this, plantationTrinitario.get(next));
 			
 		}
+	}*/
+	
+	
+	 public void updatePlantation() {
+		for (Feve feve:getFeve()) {
+			setRecolte(feve,getPlantation(feve).getRecolte(LE_MONDE.getStep()));
+			if(LE_MONDE.getStep()%unAnEnSteps == 0){
+				getPlantation(feve).updatePlantation(LE_MONDE.getStep(),getPlantation(feve).moyenneDemande()*1/40);
+			} else{
+				getPlantation(feve).updatePlantation(LE_MONDE.getStep(),0);
+			}
+		}
 	}
+	
+		
+	 
 	// END ANTI 
 
 	// BEGIN Nas
 	private void updateStock() {
-		stockFeves.setValeur(this, 0);
+		getStockFeves().setValeur(this, 0);
 		for (Feve feve:getFeve()) {
 			getStock(feve).updateStock(LE_MONDE.getStep(),(int)getRecolte(feve));
-			stockFeves.ajouter(this,getStockI(feve).getValeur());
+			getStockFeves().ajouter(this,getStockI(feve).getValeur());
 		}
 		
 		genereAlea();		
@@ -425,6 +535,11 @@ public class Producteur1Interne implements IActeur /* , IVendeurCacaoAleatoire *
 	
 	protected Indicateur getStockI(Feve feve) {
 		return getStock(feve).getInd();
+		
+	}
+	
+	protected Indicateur getPlantationI(Feve feve) {
+		return getPlantation(feve).getInd();
 		
 	}
 	
@@ -443,6 +558,23 @@ public class Producteur1Interne implements IActeur /* , IVendeurCacaoAleatoire *
 	      }
 		return null;
 	}
+	
+	protected Plantation getPlantation(Feve feve){
+		if (feve.getVariete()== Variete.CRIOLLO) {
+	    	  
+	    	  return plantationCriollo;
+	      }
+	      if (feve.getVariete()== Variete.FORASTERO) {
+	    	  
+	    	  return plantationForastero;
+	      }
+	      if (feve.getVariete()== Variete.TRINITARIO) {
+	    	  
+	    	  return plantationTrinitario;
+	      }
+		return null;
+	}
+	 
 	// END Nass
 	
 	//Begin Manon
@@ -522,7 +654,7 @@ public class Producteur1Interne implements IActeur /* , IVendeurCacaoAleatoire *
 	public void setHistoriqueSoldeBancaire(List<Double> historiqueSoldeBancaire) {
 		this.historiqueSoldeBancaire = historiqueSoldeBancaire;
 	}
-	public Indicateur getPlantationCriolloI() {
+	/*public Indicateur getPlantationCriolloI() {
 		return plantationCriolloI;
 	}
 	public void setPlantationCriolloI(Indicateur plantationCriolloI) {
@@ -557,7 +689,7 @@ public class Producteur1Interne implements IActeur /* , IVendeurCacaoAleatoire *
 	}
 	public void setPlantationTrinitario(HashMap<Integer, Integer> plantationTrinitario) {
 		this.plantationTrinitario = plantationTrinitario;
-	}
+	}*/
 	public int getCompteurSteps() {
 		return compteurSteps;
 	}
@@ -645,9 +777,7 @@ public class Producteur1Interne implements IActeur /* , IVendeurCacaoAleatoire *
 	public void setSoldeBancaire(Indicateur soldeBancaire) {
 		this.soldeBancaire = soldeBancaire;
 	}
-	public void setPrixAuKilo(HashMap<Feve, Double> prixAuKilo) {
-		this.prixAuKilo = prixAuKilo;
-	}
+	
 	public void setHistoriqueContrats(HashMap<Integer, ContratCadre<Feve>> historiqueContrats) {
 		this.historiqueContrats = historiqueContrats;
 	}

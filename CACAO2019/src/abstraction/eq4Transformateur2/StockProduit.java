@@ -6,7 +6,7 @@ import java.util.List;
 
 /**
  * @author Kelian
- * Stocke une file de tas de fèves (ou de chocolat) pour chaque type de fèves (ou de chocolat)
+ * Stocke une file de tas de fèves (ou de chocolat) pour chaque type de fèves (ou de chocolat).
  */
 public class StockProduit<T> {
 	private HashMap<T , LinkedList<TasProduit<T>>> stocks;
@@ -69,7 +69,7 @@ public class StockProduit<T> {
 				qty -= qteAPrendre;
 				prix += qteAPrendre * t.getPrixAuKilo();
 				// On supprime le tas s'il est vide
-				if(t.getQuantité() == 0)
+				if(t.getQuantité() < 0.01)
 					tas.pop();
 			}
 			return prix;

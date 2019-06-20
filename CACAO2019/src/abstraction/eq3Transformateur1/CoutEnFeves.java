@@ -5,7 +5,11 @@ import java.util.HashMap;
 
 import abstraction.eq7Romu.produits.Chocolat;
 import abstraction.eq7Romu.produits.Feve;
-
+/** 
+ * 
+ * @author eve
+ *
+ */
 public class CoutEnFeves {
 	
 	private HashMap<Chocolat, HashMap<Feve, Double>> cout;

@@ -1,6 +1,7 @@
 package abstraction.eq4Transformateur2;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import abstraction.eq7Romu.produits.Chocolat;
@@ -14,14 +15,22 @@ import abstraction.fourni.IActeur;
 import abstraction.fourni.Monde;
 
 public class Transformateur2AcheteurCC implements IAcheteurContratCadre<Feve> {
-	private static final double POIDS_MIN_CONTRAT_ACHAT = 10000.0; // poids min d'un contrat d'achat de fèves
+	private static final double POIDS_MIN_CONTRAT_ACHAT = 10000.0; // poids min d'un contrat d'achat de fèves.
 	private static final double DEPENSE_MAX_PAR_CC = 0.60; // on ne dépense pas plus de 60% de notre solde par CC
 	
 	private Transformateur2 t2;
 	
+	private HashMap<Feve,Double> dernierPrixAchat;
+	
 	public Transformateur2AcheteurCC(Transformateur2 trans2) {
 		this.t2 = trans2;
+		
+		// Adrien et Guillaume
+		dernierPrixAchat = new HashMap<Feve,Double>();
+		for (Feve f : t2.FEVES_ACHAT)
+			dernierPrixAchat.put(f, 0.0);
 	}
+	
 	
 	// Kelian
 	@Override
@@ -58,7 +67,7 @@ public class Transformateur2AcheteurCC implements IAcheteurContratCadre<Feve> {
 			double qté = vendeur.getStockEnVente().get(minProduit);
 			double prix = vendeur.getPrix(minProduit, qté);			
 			
-			// On réduit la quantité achetée tant que le prix est supérieur à 60% de notre solde
+			// On réduit la quantité achetée tant que le prix est supérieur à un pourcentage fixé de notre solde
 			while(qté > POIDS_MIN_CONTRAT_ACHAT && qté * prix > solde * DEPENSE_MAX_PAR_CC) {
 				qté *= 0.8;
 				prix = vendeur.getPrix(minProduit, qté);
@@ -123,7 +132,6 @@ public class Transformateur2AcheteurCC implements IAcheteurContratCadre<Feve> {
 
 	@Override
 	public void proposerPrixAcheteur(ContratCadre<Feve> cc) {
-		
 		// TODO Stocker le prix du dernier achat de ce produit et l'utiliser comme référence 
 		// (éviter d'acheter plus de 10% plus haut que l'achat le moins cher de ce produit, par exemple)
 		
@@ -140,6 +148,7 @@ public class Transformateur2AcheteurCC implements IAcheteurContratCadre<Feve> {
 	@Override
 	public void notifierAcheteur(ContratCadre<Feve> cc) { 
 		t2.contratsFevesEnCours.add(cc);
+		dernierPrixAchat.put(cc.getProduit(), cc.getPrixAuKilo());
 	}
 
 	// Kelian
@@ -161,5 +170,10 @@ public class Transformateur2AcheteurCC implements IAcheteurContratCadre<Feve> {
 		double paiement = Math.min(montant,  t2.soldeBancaire.getValeur());
 		t2.soldeBancaire.retirer(t2,  paiement);
 		return paiement;
+	}
+	
+	// Guillaume
+	public double getDernierPrixAchat(Feve f) {
+		return dernierPrixAchat.get(f);
 	}
 }

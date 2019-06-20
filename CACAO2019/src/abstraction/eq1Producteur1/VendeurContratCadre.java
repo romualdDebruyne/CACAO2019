@@ -18,7 +18,7 @@ public class VendeurContratCadre extends Producteur1Interne implements IVendeurC
         StockEnVente<Feve> stockEnVente= new StockEnVente<Feve>();
         for(Feve feve: this.getFeve()) {
         	double stocktotal= this.getStockI(feve).getValeur();
-        	for (ContratCadre<Feve> cc : this.contratEnCours) {
+        	for (ContratCadre<Feve> cc : getContratEnCours()) {
 			if (Monde.LE_MONDE!=null) {
 				stocktotal-= cc.getQuantiteRestantALivrer();  
 			}
@@ -27,44 +27,51 @@ public class VendeurContratCadre extends Producteur1Interne implements IVendeurC
 		stockEnVente.ajouter(feve, Math.max(0.0, stocktotal));
         }
         //journal1.ajouter("stock en vente " +stockEnVente); // ROMU
-		return stockEnVente;// ROMU. Prealablement stockEnVente; mais jamais initialisee...
+		return stockEnVente;
 	}
 //END MANON
 	public double getPrix(Feve produit, Double quantite) {
 		// BEGIN Pauline
-		Producteur1Interne prod= new Producteur1Interne();
 		if (produit == null || quantite <= 0.0) {
 			return Double.NaN;
 		} else if (quantite > this.getStockEnVente().get(produit)) {
 			return Double.NaN;
 		} else {
+			//BEGIN MAnon
 
-			if(this.getHistoriqueSoldeBancaire().size()<=1) {
-				this.journal1.ajouter("Prix de Vente"+ prod.getPrixAuKilo().get(produit));
-				return prod.getPrixAuKilo().get(produit);}
+			/*if(this.getHistoriqueSoldeBancaire().size()<=1) { // On regarde si on est pas au premier ou deuxième step
+				this.journal1.ajouter("Prix de Vente"+ this.getPrixAuKilo().get(produit));
+				this.getPrixAboutissantAcc(produit).put(this.getPrixAuKilo().get(produit), false);
+				return this.getPrixAuKilo().get(produit);}
 			
 			else{
-			if (this.getHistoriqueSoldeBancaire().get(this.getHistoriqueSoldeBancaire().size()-2)>this.getHistoriqueSoldeBancaire().get(this.getHistoriqueSoldeBancaire().size()-1)){
-					if(this.getStockEnVente().get(produit)==this.getStockI(produit).getValeur()) {
-						if(this.getStockI(produit).getValeur()*this.getPrixAuKilo().get(produit)-0.1>this.getCOUT_FIXE()/3+this.getStockI(produit).getValeur()*this.getCOUT_VARIABLE_STOCK())
-								this.prixAuKilo.put(produit, this.getPrixAuKilo().get(produit)-0.1);
-						this.journal1.ajouter("Prix de Vente"+ prod.getPrixAuKilo().get(produit));
-						return prod.getPrixAuKilo().get(produit);
-				}  
-					else {this.journal1.ajouter("Prix de Vente"+ prod.getPrixAuKilo().get(produit));
-					return prod.getPrixAuKilo().get(produit);}
-			 }else {this.journal1.ajouter("Prix de Vente"+ prod.getPrixAuKilo().get(produit));
-				 return prod.getPrixAuKilo().get(produit);}
+				if(this.moyenneDemande(produit)*2>this.getStockI(produit).getValeur() ) {
+					this.prixAuKilo.put(produit, this.getPrixAuKilo().get(produit)+0.1);
+					this.getPrixAboutissantAcc(produit).put(this.getPrixAuKilo().get(produit), false);
+					getJournal1().ajouter("Prix de Vente"+ this.getPrixAuKilo().get(produit));
+					return this.getPrixAuKilo().get(produit);}
 				
+				else {
+					//if(this.moyennePrixNonAccepte(produit)>this.getPrixAuKilo().get(produit)) {
+						if(this.getStockI(produit).getValeur()*this.getPrixAuKilo().get(produit)-0.1>this.getCOUT_FIXE()/3+this.getStockI(produit).getValeur()*this.getCOUT_VARIABLE_STOCK()||this.getStockI(produit).getValeur()*this.getPrixAuKilo().get(produit)-0.1>0) {// On vérifie qu'on ne vend pas à perte
+								this.prixAuKilo.put(produit, this.getPrixAuKilo().get(produit)-0.1);
+								getJournal1().ajouter("Prix de Vente"+ this.getPrixAuKilo().get(produit));
+								this.getPrixAboutissantAcc(produit).put(this.getPrixAuKilo().get(produit), false);
+								return this.getPrixAuKilo().get(produit);}
+						
+						else {
+						this.getPrixAboutissantAcc(produit).put(this.getPrixAuKilo().get(produit), false);
+						*/this.getPrixAboutissantAcc(produit).put(this.getPrixAuKilo().get(produit), false);
+						return this.getPrixAuKilo().get(produit);}
+				}  
+					//else {this.journal1.ajouter("Prix de Vente"+ this.getPrixAuKilo().get(produit));
+					//return this.getPrixAuKilo().get(produit);}
+				//}
 				//END MANON
 
 			// utiliser Producteur1.getPrixAuKilo() pour savoir prix en fct du produit
-			}
-			
-			}		
-					
 
-			}
+
 		// END Pauline
 	
 //Begin MANON ET PAULINE
@@ -104,6 +111,7 @@ public class VendeurContratCadre extends Producteur1Interne implements IVendeurC
 //Manon
 
 	public void proposerPrixVendeur(ContratCadre<Feve> cc) {
+		this.getPrixAboutissantAcc(cc.getProduit()).put(cc.getPrixAuKilo(), true);
 
 		/* Si la liste est nulle on ajoute le prix initialement proposé */
 		if (cc.getListePrixAuKilo().size()==0) {
@@ -137,8 +145,8 @@ public class VendeurContratCadre extends Producteur1Interne implements IVendeurC
 	public void notifierVendeur(ContratCadre<Feve> cc) {
 
 		super.getHistoriqueContrats().put(cc.getNumero(), cc);
-		super.contratEnCours.add(cc);
-		this.journal1.ajouter("Vente"+cc.getNumero());
+		super.getContratEnCours().add(cc);
+		this.getJournal1().ajouter("Vente"+cc.getNumero());
 //END ANTI
 
 
@@ -157,9 +165,9 @@ public class VendeurContratCadre extends Producteur1Interne implements IVendeurC
 
 
 	public void encaisser(double montant, ContratCadre<Feve> cc) {
-		super.soldeBancaire.ajouter(this ,  montant);
+		super.getSoldeBancaire().ajouter(this ,  montant);
 		//cc.payer(montant);
-		journal1.ajouter("solde bancaire +" + Double.toString(montant));
+		getJournal1().ajouter("solde bancaire +" + Double.toString(montant));
 
 	}
 //
@@ -184,7 +192,7 @@ public class VendeurContratCadre extends Producteur1Interne implements IVendeurC
 		    	  double valeur_livre=getStockI(produit).getValeur();
 		    	  retirer(produit,valeur_livre);
 		    	  //cc.livrer(valeur_livre);
-		    	  this.journal1.ajouter("Valeur livré"+ valeur_livre);
+		    	  this.getJournal1().ajouter("Valeur livré"+ valeur_livre);
 		         return valeur_livre;
 		      }
 		      
@@ -193,11 +201,13 @@ public class VendeurContratCadre extends Producteur1Interne implements IVendeurC
 		    	  //cc.livrer(quantite);
 		    	  //super.stockFeves.retirer(this, quantite);
 		    	  retirer(produit,quantite);
-		    	  this.journal1.ajouter("Valeur livré"+ quantite);
+		    	  this.getJournal1().ajouter("Valeur livré"+ quantite);
 		         return quantite;
 		      }
 		   
 	}
+	
+	
 	
 	//BEGIN NAS
 	public void retirer(Feve feve, double quantite) {
@@ -221,6 +231,7 @@ public class VendeurContratCadre extends Producteur1Interne implements IVendeurC
 		
 	}
 	//END NAS
+	
 	
 
 }

@@ -41,15 +41,26 @@ public class Transformateur2 implements IActeur, IAcheteurContratCadre<Feve>, IV
 	/// Stockage des contrats en cours
 	protected List<ContratCadre<Feve>> contratsFevesEnCours;
 	protected List<ContratCadre<Chocolat>> contratsChocolatEnCours;
-
+	
+	// Archivage des contrats terminés
+	private List<ContratCadre<Feve>> archiveContratsFeves;
+	private List<ContratCadre<Chocolat>> archiveContratsChocolat;
+	
 	protected StockEnVente<Chocolat> stockEnVente;
 	
 	// Historique des demandes (utilisée pour définir notre stratégie d'achat de fèves)
-	public HistoriqueDemande historiqueDemande;
+	protected HistoriqueDemande historiqueDemande;
+	
+	// Planning des stocks (il s'agit d'objectifs que l'on souhaite atteindre, estimés à l'aide de l'historique des demandes
+	protected PlanningStock<Chocolat> planningStockChocolats;
+	protected PlanningStock<Feve> planningStockFeves;
 	
 	// Constantes
 	public static final int STEPS_PAR_ANNEE = 24;
 	private static final double MAX_PRODUCTION_PAR_STEP = 10e3; // Production max. de chocolats par step, en kg
+	private static final int STEPS_ESTIMATION_DEMANDE_FUTURE = 12; // Le nombre de steps dans le futur pour lesquels on estime la demande
+	private static final double MARGE_STOCK_CHOCOLAT = 0.1; // La marge de chocolat que l'on produit en plus de la demande estimée
+	private static final double QTE_PRODUCTION_MIN = 10.0;
 	
 	public Transformateur2() {
 		// Initialisation et ajout des indicateurs
@@ -85,8 +96,11 @@ public class Transformateur2 implements IActeur, IAcheteurContratCadre<Feve>, IV
 		FEVES_ACHAT.add(Feve.TRINITARIO_MG_EQ);
 		FEVES_ACHAT.add(Feve.TRINITARIO_MG_NEQ);
 		
+		// Initialisation des listes de contrats
 		contratsFevesEnCours = new ArrayList<ContratCadre<Feve>>();
 		contratsChocolatEnCours = new ArrayList<ContratCadre<Chocolat>>();
+		archiveContratsFeves = new ArrayList<ContratCadre<Feve>>();
+		archiveContratsChocolat = new ArrayList<ContratCadre<Chocolat>>();
 		
 		acheteurCC = new Transformateur2AcheteurCC(this);
 		vendeurCC = new Transformateur2VendeurCC(this);
@@ -95,28 +109,57 @@ public class Transformateur2 implements IActeur, IAcheteurContratCadre<Feve>, IV
 		stocksChocolat = new StockProduit<Chocolat>(CHOCOLATS_VENTE);
 		stockFeves = new StockProduit<Feve>(FEVES_ACHAT);
 		
+		for(Chocolat c : CHOCOLATS_VENTE) {
+			stocksChocolat.ajouterTas(c, new TasProduit<Chocolat>(10e3, 12.0));
+			iStockChocolat.ajouter(this, 10e3);
+		}
+			
 		// Initialisation de l'historique des demandes
 		historiqueDemande = new HistoriqueDemande();
+		
+		// Initialisation des planning objectifs de stocks
+		planningStockChocolats = new PlanningStock<Chocolat>();
+		planningStockFeves = new PlanningStock<Feve>();
 	}
 
 	public void next() {
+		/** Archivage des contrats terminés */
+		archiverContratsTerminés(contratsFevesEnCours, archiveContratsFeves);
+		archiverContratsTerminés(contratsChocolatEnCours, archiveContratsChocolat);
+		
+		System.out.println("CCs Chocolat en cours : " + contratsChocolatEnCours.size());
+		
 		/** ---- Transformations ---- (Kelian) */
 		double qteTransformee = 0.0;
 		double lastQteTransformee = 0.0;
-		do {
+		do {;
 			lastQteTransformee = effectuerTransformation(); 
+			System.out.println("Transformation de " + lastQteTransformee + " kg");
 			qteTransformee += lastQteTransformee;
-		} while(lastQteTransformee != 0 && qteTransformee < MAX_PRODUCTION_PAR_STEP);
-			
-		/*double quantiteTransformee = Math.random()*Math.min(100, this.iStockFeves.getValeur()); // on suppose qu'on a un stock infini de sucre
-		this.iStockFeves.retirer(this, quantiteTransformee);
-		this.iStockChocolat.ajouter(this, (2*quantiteTransformee));// 50% cacao, 50% sucre
-		this.soldeBancaire.retirer(this, quantiteTransformee*1.0234); // sucre, main d'oeuvre, autres frais*/
+		} while(lastQteTransformee != 0.0 && qteTransformee < MAX_PRODUCTION_PAR_STEP);
 		
+		/** Prévision des stocks */ // TODO Ne pas le faire à chaque step
+		estimerPlanningStockChocolat();
+		verifierPlanningStockChocolat();
+		calculerPlanningStockFeves();
 	}
 
 	// Kelian
-	/** Effectue une transformation. Renvoie true si une transformation a été effectuée, false sinon */
+	/** Archive les contrats terminés */
+	private <T> void archiverContratsTerminés(List<ContratCadre<T>> contrats, List<ContratCadre<T>> archive) {
+		List<ContratCadre<T>> aArchiver = new ArrayList<ContratCadre<T>>();
+		for(ContratCadre<T> cc : contrats) {
+			if(cc.getQuantiteRestantALivrer() <= 0.0 && cc.getMontantRestantARegler() <= 0.0)
+				aArchiver.add(cc);
+		}
+		for(ContratCadre<T> cc : aArchiver) {
+			archive.add(cc);
+			contrats.remove(cc);
+		}
+	}
+	
+	// Kelian
+	/** Effectue une transformation. Renvoie la quantité de chocolat produit */
 	private double effectuerTransformation() {
 		// On vérifie d'abord s'il y a  des fèves qu'on doit absolument utiliser
 		Feve f = getFeveCritique();
@@ -124,16 +167,17 @@ public class Transformateur2 implements IActeur, IAcheteurContratCadre<Feve>, IV
 			Recette r = Recette.getRecettes(f).get(0); // la liste ne contient normalement qu'un élément
 			TasProduit<Feve> tas = stockFeves.getProchainTasPerime(f);
 			double qte = 0;
-			// TODO Prendre en compte coût fixe
-			if(r.getCoutTransformation() * tas.getQuantité() < soldeBancaire.getValeur() * 0.3)
+			if(r.calculCoutTransformation(tas.getQuantité()) < soldeBancaire.getValeur() * 0.3)
 				qte = tas.getQuantité(); // on transforme tout le tas
 			else
-				qte = (soldeBancaire.getValeur() * 0.3) / r.getCoutTransformation(); // on transforme le plus possible
+				qte = r.getQteProductible(soldeBancaire.getValeur() * 0.3); // on transforme le plus possible jusqu'à 30% de notre solde
+			
+			if(qte < QTE_PRODUCTION_MIN)
+				return 0.0;
 			
 			executerRecette(r, qte);
 			return qte;
 		}
-		
 		// On s'intéresse ensuite au chocolat que l'on doit produire en priorité pour satisfaire les échéances des CC en cours
 		Pair<Chocolat, Double> c = getChocolatCritique();
 		if(c != null && c.getX() != null) {
@@ -153,13 +197,15 @@ public class Transformateur2 implements IActeur, IAcheteurContratCadre<Feve>, IV
 			// à ce stade maxRecette ne devrait pas être null, sauf si on nous demande de produire un chocolat qui n'a pas de recette associée.
 			
 			double qte = 0;
-			// TODO Prendre en compte coût fixe
-			if(maxRecette.getCoutTransformation() * c.getY() < soldeBancaire.getValeur() * 0.6)
+			if(maxRecette.calculCoutTransformation(c.getY()) < soldeBancaire.getValeur() * 0.6)
 				qte = c.getY();
 			else
-				qte = (soldeBancaire.getValeur() * 0.6) / maxRecette.getCoutTransformation(); // on transforme le plus possible
+				qte = maxRecette.getQteProductible(soldeBancaire.getValeur() * 0.6); // on transforme le plus possible jusqu'à 60% de notre sold
+			if(qte < QTE_PRODUCTION_MIN)
+				return 0.0;
 			
-			executerRecette(maxRecette, qte);
+			System.out.println("Production de chocolat : " + qte);
+			
 			return qte;
 		}
 		
@@ -169,25 +215,25 @@ public class Transformateur2 implements IActeur, IAcheteurContratCadre<Feve>, IV
 	// Kelian
 	/** Exécute une recette (actualisation des stocks, du solde, ...). Renvoie true si la recette a bien été executée (false sinon; manque de stock par exemple) */
 	private boolean executerRecette(Recette r, double qte) {
-		double fevesNecessaires = r.getInputQteParKilo() * qte;
+		double fevesNecessaires = r.getInputParKgProduit() * qte;
 		
 		// Vérification stock
 		if(stockFeves.getQuantiteTotale(r.getInputFeve()) < fevesNecessaires)
 			return false;
 		
 		// Vérification solde
-		if(soldeBancaire.getValeur() < r.calculCout(qte))
+		if(soldeBancaire.getValeur() < r.calculCoutTransformation(qte))
 			return false;
 		
 		// Exécution stock
-		double coutTotal = stockFeves.getPrix(r.getInputFeve(), fevesNecessaires) + r.calculCout(qte);
+		double coutTotal = stockFeves.getPrix(r.getInputFeve(), fevesNecessaires) + r.calculCoutTransformation(qte);
 		stockFeves.prendreProduits(r.getInputFeve(), fevesNecessaires);
 		iStockFeves.retirer(this, fevesNecessaires);
 		stocksChocolat.ajouterTas(r.getOutput(), new TasProduit<Chocolat>(qte, qte / coutTotal));
 		iStockChocolat.ajouter(this, qte);
 		
 		// Exécution solde
-		soldeBancaire.retirer(this, r.calculCout(qte));
+		soldeBancaire.retirer(this, r.calculCoutTransformation(qte));
 		
 		return true;
 	}
@@ -209,18 +255,19 @@ public class Transformateur2 implements IActeur, IAcheteurContratCadre<Feve>, IV
 	// Kelian
 	/** Renvoie le chocolat que l'on doit produire en priorité pour satisfaire les échéances, et la quantité associée */
 	private Pair<Chocolat, Double> getChocolatCritique() {
+		int step = Monde.LE_MONDE.getStep();
 		// On construit une HashMap qui contient, pour chaque CC en cours, le nombre d'échéances que l'on peut satisfaire avec le stock actuel
 		HashMap<ContratCadre<Chocolat>, Integer> echeancesSatisfiables = new HashMap<ContratCadre<Chocolat>, Integer>();
 		for(ContratCadre<Chocolat> cc : contratsChocolatEnCours) {
 			Echeancier e = cc.getEcheancier();
-			double qteDejaLivree = e.getQuantiteJusquA(Monde.LE_MONDE.getStep() - e.getStepDebut());
+			double qteDejaLivree = e.getQuantiteJusquA(step);
 			int i = 0;
 			// Tant que l'on n'est pas arrivé au bout de l'échéancier et que l'on a assez de stock
-			while(i < e.getNbEcheances() && e.getQuantiteJusquA(i) - qteDejaLivree < stocksChocolat.getQuantiteTotale(cc.getProduit()));
+			while(i < e.getNbEcheances() && e.getQuantiteJusquA(step + i) - qteDejaLivree < stocksChocolat.getQuantiteTotale(cc.getProduit()))
 				i++;
 			echeancesSatisfiables.put(cc, i-1);
 		}
-		
+
 		if(echeancesSatisfiables.isEmpty()) // Tous les CC en cours sont satisfiables par notre stock actuel
 			return null; // On ne produit pas plus
 		
@@ -241,11 +288,92 @@ public class Transformateur2 implements IActeur, IAcheteurContratCadre<Feve>, IV
 	}
 	
 	// Kelian
+	/** Estime les quantités de chocolat à stocker sur les prochains steps en utilisant des estimations calculées à partir des années précédentes. */
+	private void estimerPlanningStockChocolat() {
+		int step = Monde.LE_MONDE.getStep();
+		for(Chocolat c : CHOCOLATS_VENTE) {
+			for(int i = 1; i <= STEPS_ESTIMATION_DEMANDE_FUTURE; i++) {
+				double demandeEstimee = historiqueDemande.estimerDemande(i, c);
+				if(demandeEstimee == -1) // Pas encore d'échantillon pour pouvoir estimer
+					planningStockChocolats.setQuantite(c, step + i, 0);
+				else
+					planningStockChocolats.setQuantite(c, step + i, demandeEstimee * (1 + MARGE_STOCK_CHOCOLAT));
+			}
+		}
+	}
+	
+	// Kelian et Guillaume
+	/** Cette fonction adapte le stock de chocolat préalablement calculer pour s'assurer qu'il satisfait tous les contrats en cours. */
+	private void verifierPlanningStockChocolat() {
+		int step = Monde.LE_MONDE.getStep();
+		// On commence par regrouper les contrats en cours par type de chocolat
+		HashMap<Chocolat, List<ContratCadre<Chocolat>>> contrats = new HashMap<Chocolat, List<ContratCadre<Chocolat>>>();
+		for(ContratCadre<Chocolat> cc : contratsChocolatEnCours) {
+			if(!contrats.containsKey(cc.getProduit()))
+				contrats.put(cc.getProduit(), new ArrayList<ContratCadre<Chocolat>>());
+			contrats.get(cc.getProduit()).add(cc);
+		}
+		
+		for(Chocolat c : CHOCOLATS_VENTE) {
+			if(!contrats.containsKey(c))
+				continue;
+			
+			for(int i = 1; i <= STEPS_ESTIMATION_DEMANDE_FUTURE; i++) {
+				// On additionne les quantités (pour ce step) associées à tous les contrats cadres pour ce type de chocolat
+				double qteRequise = 0.0;
+				for(ContratCadre<Chocolat> cc : contrats.get(c))
+					qteRequise += cc.getEcheancier().getQuantite(step + i);
+			
+				if(qteRequise > planningStockChocolats.getQuantite(c, step + i))					
+					planningStockChocolats.setQuantite(c, step + i, qteRequise);
+			}	
+		}
+	}
+	
+	// Kelian
+	/** Utilise le planning de stock de chocolats pour définir les quantités de fèves à stocker sur les prochains steps */
+	private void calculerPlanningStockFeves() {
+		int step = Monde.LE_MONDE.getStep();
+		
+		for(Chocolat c : CHOCOLATS_VENTE) {
+			double qteChocolatEnStock = stocksChocolat.getQuantiteTotale(c);
+			Recette r = getRecetteMoindreCout(c);
+			planningStockFeves.reset(r.getInputFeve());
+			
+			for(int i = 1; i <= STEPS_ESTIMATION_DEMANDE_FUTURE; i++) {
+				double qteChocolatNecessaire = planningStockChocolats.getQuantite(c, step + i);
+				// Prise en compte du chocolat déjà présent dans notre stock
+				double utilisationStock = Math.min(qteChocolatEnStock, qteChocolatNecessaire);
+				qteChocolatEnStock -= utilisationStock;
+				qteChocolatNecessaire -= utilisationStock;
+				
+				double qteFevesNecessaire = r.getInputParKgProduit() * qteChocolatNecessaire;
+				planningStockFeves.addQuantite(r.getInputFeve(), step + i, qteFevesNecessaire);
+			}
+		}
+	}
+	
+	// Kelian
+	/** Renvoie la recette que l'on doit utiliser pour produire un type de chocolat au moindre coût, à l'aide du dernier prix d'achat de chaque fève. */
+	private Recette getRecetteMoindreCout(Chocolat c) {
+		List<Recette> recettes = Recette.getRecettes(c);
+		double minPrix = Double.MAX_VALUE;
+		Recette minPrixRecette = null;
+		for(Recette r : recettes) {
+			double prix = r.getInputParKgProduit() * acheteurCC.getDernierPrixAchat(r.getInputFeve());
+			if(prix < minPrix) {
+				minPrix = prix;
+				minPrixRecette = r;
+			}
+		}
+		return minPrixRecette;
+	}
+	
+	// Kelian
 	/** Renvoie le step actuel dans l'année en cours */
 	public static int getCurrentStepInAnnee() {
 		return Monde.LE_MONDE.getStep() % STEPS_PAR_ANNEE;
 	}
-	
 	
 	/** Fonctions relatives à IAcheteurContratCadre<Feve> */
 	public ContratCadre<Feve> getNouveauContrat() {return acheteurCC.getNouveauContrat();}
@@ -264,7 +392,4 @@ public class Transformateur2 implements IActeur, IAcheteurContratCadre<Feve>, IV
 	public void notifierVendeur(ContratCadre<Chocolat> cc) {vendeurCC.notifierVendeur(cc);}
 	public double livrer(Chocolat p, double qte, ContratCadre<Chocolat> cc) {return vendeurCC.livrer(p, qte, cc);}
 	public void encaisser(double montant, ContratCadre<Chocolat> cc) {vendeurCC.encaisser(montant, cc);}
-	
-	
-
 }
