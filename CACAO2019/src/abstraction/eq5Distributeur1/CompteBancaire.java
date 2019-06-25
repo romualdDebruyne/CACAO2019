@@ -42,7 +42,7 @@ public class CompteBancaire extends Indicateur {
 	 * @author Erine DUPONT & Estelle BONNET 
 	 * */
 	public void RecevoirPaiement (IActeur auteur, double paiement) {
-		double nouveausolde = this.getValeur() + paiement;
+		double nouveausolde = this.getValeur() + paiement*0.8;
 		if (paiement <0.0) {
 			throw new IllegalArgumentException("Appel de RecevoirPaiement(compte, paiement) de CompteBancaire avec paiement<0.0 (=="+paiement+")");
 		} else {

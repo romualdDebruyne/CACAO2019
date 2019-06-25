@@ -8,8 +8,8 @@
     <property name="ECLIPSE_HOME" value="../../../Applications/eclipse/modeling-mars/Eclipse.app/Contents/Eclipse/"/>
     <property name="junit.output.dir" value="junit"/>
     <property name="debuglevel" value="source,lines,vars"/>
-    <property name="target" value="1.7"/>
-    <property name="source" value="1.7"/>
+    <property name="target" value="1.8"/>
+    <property name="source" value="1.8"/>
     <path id="CACAO2019.classpath">
         <pathelement location="bin"/>
         <pathelement location="lib/hamcrest-core-1.3.jar"/>

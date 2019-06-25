@@ -14,9 +14,6 @@ public class CoutEnFeves {
 	
 	private HashMap<Chocolat, HashMap<Feve, Double>> cout;
 	
-	public CoutEnFeves() {
-	}
-	
 	public CoutEnFeves(ArrayList<Chocolat> chocolats, ArrayList<Feve> feves) {
 		this.cout = new HashMap<Chocolat, HashMap<Feve, Double>>();
 		for (Chocolat c: chocolats) { 

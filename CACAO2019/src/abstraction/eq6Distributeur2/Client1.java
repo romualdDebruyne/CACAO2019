@@ -1,12 +1,12 @@
 package abstraction.eq6Distributeur2;
 
 
+
 import java.util.ArrayList;
 import java.util.List;
 
 import abstraction.eq7Romu.distributionChocolat.IDistributeurChocolat;
 import abstraction.eq7Romu.produits.Chocolat;
-import abstraction.eq7Romu.produits.Gamme;
 import abstraction.eq7Romu.ventesContratCadre.StockEnVente;
 import abstraction.fourni.IActeur;
 import abstraction.fourni.Journal;
@@ -27,67 +27,51 @@ public class Client1 implements IActeur{
 	
 	private int numero;
 	private double preferenceprix;
-	private double preferencequalite;
 	private double preferencequantite;
 	private double quantitemoyenne ;
 	private List<IDistributeurChocolat> Distributeurs;
 	private Chocolat unique;
 	private Journal journal ;
+	private HashMap<IDistributeurChocolat, Double> hist;
 	private ArrayList<Double> temporalite ;
 	
 	
-	public Client1(double preferenceprix, double preferencequantite, double preferencequalite , double quantitemoyenne , Chocolat unique) {
+	public Client1(double preferenceprix, double preferencequantite , double quantitemoyenne , Chocolat unique, ArrayList<Double> temporalite ) {
 		NB_CLIENT++;
 		this.numero = NB_CLIENT;
 		this.preferenceprix = preferenceprix;
 		this.preferencequantite = preferencequantite ;
-		this.preferencequalite= preferencequalite;
 		this.quantitemoyenne = quantitemoyenne;
 		this.unique = unique ;
+		this.temporalite = temporalite ;
+		this.hist= new HashMap< IDistributeurChocolat, Double>();
 		this.Distributeurs = new ArrayList<IDistributeurChocolat>();
 		this.journal = new Journal("Journal "+this.getNom());
 		Monde.LE_MONDE.ajouterJournal(this.journal);
 		
-		ArrayList<Double> temporalite = new ArrayList<Double>();
-		int i = 0 ;
-		while (i<24) {
-			if (i==0 || i==4 || i==23||i==24) {
-				temporalite.add(1.5);
-			}
-			else {
-				temporalite.add(1.0);
-			}
-			
-			i+=1;
-			
-		}
+		
 	}
 	
+	public ArrayList<Double> getTemporalite (){
+		return temporalite;
+	}
 	
+	public HashMap<IDistributeurChocolat, Double> getHist() {
+		return hist;
+	}
+
+
+	public void setHist(IDistributeurChocolat D, Double oc) {
 	
-	//Nazim
-		public double getQualite(Chocolat c) {
-			int N = 0;
-			if (c.isEquitable()) {
-				N = N+1 ;
-			}
-			if (c.isSansHuileDePalme()) {
-				N = N+1 ;
-			}
-			if (c.getGamme() == Gamme.HAUTE ) {
-				N= N+2 ;
-			} else if (c.getGamme() == Gamme.MOYENNE) {
-				N = N+1 ;
-			}
-			return 10*N/4;
-		}
-	
+	this.hist.put(D, oc);
+		
+	}
+
 	public String getNom() {
 		return "CL"+this.numero;
 	
 	}
-	
-	
+
 	
 	public int getNumero() {
 		return numero;
@@ -129,66 +113,77 @@ public class Client1 implements IActeur{
 	}
 
 
-	public ArrayList<Double> evaluation_produit ( IDistributeurChocolat D, Chocolat c) {
-		ArrayList<Double> L = new ArrayList<Double>(); 
-		L.add(D.getPrix(c));
-		L.add(D.getStockEnVente().get(c));
-		L.add(getQualite(c));
-		return L;
-		
-	}
-	
 
 	
 //Implémentation de la liste de distributeurs comportant le produit désiré par le client en stock 
 //avec une quantité supérieure ou égale à la quantité recherché par le client qui vaut quantitemoyenne*temporalité.get(step)
-//*	
-	public void setDistributeurs(int step) {
-		
+	
+	public void setDistributeurs() {
 	for (IActeur D : Monde.LE_MONDE.getActeurs()) {
 		if (D instanceof IDistributeurChocolat ) {
 			IDistributeurChocolat dist = (IDistributeurChocolat)D;
 			StockEnVente<Chocolat> s = dist.getStockEnVente();
-			if (s.getProduitsEnVente().contains(this.unique) & s.get(unique)>= quantitemoyenne* temporalite.get(step) );
+			if (s.getProduitsEnVente().contains(this.unique) == true && (s.get(unique) > 0) ) {
 				Distributeurs.add((IDistributeurChocolat)D);
 			}
 		}
 	}
+	}
 	
-	//*/
+	
 	
 	 
-    // Liste des notes sur 10 du chocolat désiré par le client selon le distributeur. Ces notes sont basées sur les préférences du client en terme de prix/quantité/qualité
-//*	
-	public List<Double> Offres (int step){
+    // Liste des notes sur 10 du chocolat désiré par le client selon le distributeur. Ces notes sont basées sur les préférences du client en terme de prix/quantité
+	
+	public List<Double> Offres (){
 	List<Double> K  = new ArrayList<Double>();
-	this.setDistributeurs(step); 
-	Double pmax= 0.0 ;
-	Double qmax= 0.0;
+	this.setDistributeurs(); 
+	double pmax =0.0;
+	double qmax=0.0;
 	
 	for ( IDistributeurChocolat D: Distributeurs) {
-		if (evaluation_produit (D,unique).get(0)> pmax) {
-			pmax=evaluation_produit (D,unique).get(0);
+		if (D.getPrix(unique)> pmax) {
+			pmax=D.getPrix(unique);
 		}
-		if (evaluation_produit (D,unique).get(1)> qmax) {
-			qmax=evaluation_produit (D,unique).get(1);
+		if (D.getStockEnVente().get(unique)> qmax) {
+			qmax=D.getStockEnVente().get(unique);
 		}
-	}
+	} 
 		
 	for ( IDistributeurChocolat H: Distributeurs) {
-		Double N = ((10 - evaluation_produit (H,unique).get(0)*10/pmax) * preferenceprix + (evaluation_produit (H,unique).get(1)* 10/qmax)*preferencequantite 
-		+ (evaluation_produit (H,unique).get(2))*preferencequalite)/3;
-		
+		Double N = ((H.getPrix(unique)) * preferenceprix*10/pmax  +   (H.getStockEnVente().get(unique)   *preferencequantite )*10/qmax)	/ 2;
 		K.add(N);
+		
+		
+	}
+	return K ;
+	}	
+	
+	public IDistributeurChocolat choix (List<Double> Notes) {
+		ArrayList<Double> Notesfinales = new ArrayList();
+		for (IDistributeurChocolat V: Distributeurs) {
+			if (this.hist.containsKey(V)) {
+				double facteurfidelite= getHist().get(V);
+				Notesfinales.add(Notes.get(Distributeurs.indexOf(V))* facteurfidelite);
+			}	
+			else {
+				Notesfinales.add(Notes.get(Distributeurs.indexOf(V)));
+			}
+		}
+		
+		Double notemax= Notesfinales.get(0);
+		for (Double x: Notesfinales) {
+			if (x> notemax) {
+				notemax = x  ;
+				
+			}
+		}
+
+		return Distributeurs.get(Notesfinales.indexOf(notemax));
+		
 		
 	}
 	
-	return K ;
-	
-	}	
-	
-	
-	//*/
 	//Evaluation du  distributeur à choisir à un step donné : on multiplie les elements de la  liste de notes par un facteur de fidélité calculé grâce aux occurences des distributeurs
 	// dans le journal.
 	//On obtient alors une liste de notes finales et on cherche la note maximale : le distributeur correspondant au chocolat atteignant ce maximum sera choisi par le client
@@ -197,47 +192,67 @@ public class Client1 implements IActeur{
 	public void initialiser() {
 	}
 
+
+	// Amelioration  de la V1 à la V2:  prise en compte de la fidélité d'achat , de la temporalité  influant sur la quantité demandée par le client et enfin l'achat de 
+	// quantitépartielles chez les distributeurs dans l'ordre décroissant de leur note relative au client et à son chocolat jusqu'à obtention de la quantité voulue de manière à 
+	// être plus réaliste.
+		
 	
 	public void next() {
-		System.out.println("next client1");
-		/*
+		
 		IDistributeurChocolat D = null ;
-		int step = Monde.LE_MONDE.getStep();
-		double notemax =0.0;
-		List<Double> Notesfinales = new ArrayList<Double>();
-		List<Double> Notes = this.Offres(step);
-		for (IDistributeurChocolat V: Distributeurs) {
-			//for ( ArrayList<String> x: Commandes){
-				double t =0 ;
-				int i = 0 ;
-				if ("V" == x.get(1)) {
-					if (i==0) {
-					     t = Notes.get(Distributeurs.indexOf(V)) *1.1  ; 
-					}
-					else {
-						t = t*1.1;
-					}
-				}
-			Notesfinales.add(t);	
-			}
-		}
-		for ( double n : Notesfinales) {
-			if (n>notemax) {
-				notemax=n;
-			}
-		}
+		int step = Monde.LE_MONDE.getStep();	
+		this.setDistributeurs();
+		System.out.println (Distributeurs);
+		System.out.println(Distributeurs);
+		List<Double> Notes = this.Offres();
+		double quantitevoulue = quantitemoyenne * temporalite.get(step);
 		
-		D= Distributeurs.get(Notesfinales.indexOf(notemax));
-		D.vendre(this.unique, quantitemoyenne);
+		double quantiteachetee=0.0 ;
+		double quantiterestante = quantitevoulue-quantiteachetee ;	
 		
-		this.journal.ajouter(""+step);
-		this.journal.ajouter(""+ D);
-		this.journal.ajouter("" +numero);
-		this.journal.ajouter(""+quantitemoyenne*temporalite.get(step));
-	//*/
-	}
+		
+		while ( quantiteachetee != quantitevoulue && Distributeurs.size()!= 0) {
+			
+			IDistributeurChocolat T = choix ( Notes);
+			if (hist.containsKey(T)) {
+				hist.put( T , hist.get(T)+0.02);
+			}
+			else {
+				hist.put( T , 1.02);	
+			}
+			this.journal.ajouter(""+step);
+			this.journal.ajouter("Distributeur "+ T.toString());
+			this.journal.ajouter("Client " +numero);
+	
+			
+				
+			if ( T.getStockEnVente().get(this.unique) >= quantiterestante  ) {
+				T.vendre(this.unique, quantiterestante);
+				this.journal.ajouter(""+quantiterestante); 
+				hist.put( T , hist.get(T)+0.02);
+			}
+			
+			else {
+				T.vendre(this.unique, T.getStockEnVente().get(this.unique));
+				
+				System.out.println (Distributeurs);
+				System.out.println ( "le distributeur est "+T);
+				System.out.println  ( " l'indice est"+Distributeurs.indexOf(T));
+				Notes.remove(Distributeurs.indexOf(T));
+				Distributeurs.remove(T);
+				this.journal.ajouter(""+T.getStockEnVente().get(this.unique));	
+			}	
+			
 
-}
-	
-	
+		}		
+				
+			}
+			
+		
+		}
+		
+		
+
+
 	

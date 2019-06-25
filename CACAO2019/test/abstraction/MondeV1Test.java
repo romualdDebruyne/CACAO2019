@@ -10,7 +10,7 @@ public class MondeV1Test {
 	public void testNext() {
 		Monde.LE_MONDE = new Monde(); 
 		Monde.LE_MONDE.peupler();
-		for (int i=0; i<200; i++)
+		for (int i=0; i<300; i++)
 			Monde.LE_MONDE.next();
 	}
 

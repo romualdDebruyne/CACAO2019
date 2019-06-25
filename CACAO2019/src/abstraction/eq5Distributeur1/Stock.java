@@ -13,11 +13,13 @@ import abstraction.fourni.Monde;
 public class Stock {
 	private HashMap<Chocolat, Double> stock;
 	private HashMap<Chocolat, Indicateur> indicateurs;
+	private HashMap<Chocolat, Double> stockDebutStep;
 
 	/** @author Estelle BONNET */
 	public Stock() {
 		this.stock = new HashMap<Chocolat, Double>();
 		this.indicateurs = new HashMap<Chocolat, Indicateur>();
+		this.stockDebutStep = new HashMap<Chocolat, Double>();
 	}
 
 	/**
@@ -48,6 +50,26 @@ public class Stock {
 		}
 	}
 	
+	/** @autho Estelle BONNET 
+	 */
+	public void initialisationDebutStep(HashMap<Chocolat, Double> stock) {
+		this.stockDebutStep=stock;
+	}
+	
+	/** @autho Estelle BONNET 
+	 */
+	public void perenniteStock(HashMap<Chocolat, Double> stock, IActeur acteur) {
+		List<Chocolat> produit = this.getProduitsEnVente();
+		double exces = 0 ;
+		for (Chocolat chocolat:produit) {
+			exces = 0;
+			exces = stock.get(chocolat) - this.stockDebutStep.get(chocolat);
+			if (exces>0) {
+				this.enlever(chocolat, exces*0.1, acteur);
+			}
+		}
+	}
+	
 	/** @authors Erine DUPONT & Estelle BONNET 
 	 * V2 @author Estelle Bonnet
 	 */
@@ -71,10 +93,29 @@ public class Stock {
 		produits.addAll(this.stock.keySet());
 		return produits;
 	}
+	
+	/** @author Estelle BONNET */
+	public HashMap<Chocolat,Double> getStock() {
+		return this.stock;
+	}
+	
+	/** @author Estelle BONNET */
+	public HashMap<Chocolat,Double> getStockDebutStep() {
+		return this.stockDebutStep;
+	}
 
 	/** @author Estelle BONNET */
 	public Double get(Chocolat produit) {
 		return (this.stock.containsKey(produit)? this.stock.get(produit) : 0.0) ;
+	}
+	
+	/** @author Estelle BONNET */
+	public Double getStockTotal() {
+		double stocktotal =0 ;
+		for (Chocolat produit : this.getProduitsEnVente()) {
+			stocktotal += (this.stock.containsKey(produit)? this.stock.get(produit) : 0.0);
+		}
+		return stocktotal;
 	}
 	
 	/** @author Estelle BONNET */
