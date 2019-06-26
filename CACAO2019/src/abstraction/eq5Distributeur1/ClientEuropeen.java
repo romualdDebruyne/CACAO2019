@@ -18,6 +18,7 @@ import abstraction.eq5Distributeur1.Publicite;
 public class ClientEuropeen implements IActeur {
 	private Journal journal;
 	private int quantiteParStep;
+	private String region;
 	public static final int NOVEMBRE1 = 21;
 	public static final int NOVEMBRE2 = 22;
 	public static final int DECEMBRE1 = 23;
@@ -25,7 +26,7 @@ public class ClientEuropeen implements IActeur {
 
 	/** @author Erwann DEFOY */
 	public String getNom() {
-		return "Client Europeen";
+		return "Client "+ getRegion();
 	}
 
 	/** @author Erwann DEFOY */
@@ -34,9 +35,9 @@ public class ClientEuropeen implements IActeur {
 	}
 
 	/** @author Erwann DEFOY */
-
-	public ClientEuropeen(int quantiteParStep) {
+	public ClientEuropeen(int quantiteParStep, String region) {
 		this.quantiteParStep = quantiteParStep;
+		this.region = region;
 		this.journal = new Journal("Journal "+this.getNom());
 		Monde.LE_MONDE.ajouterJournal(this.journal);
 	}
@@ -55,8 +56,6 @@ public class ClientEuropeen implements IActeur {
 		do {
 			distributeurDeQualite = null;
 			quantiteEnVenteMeilleur = 0.0;
-			int step_actuel = Monde.LE_MONDE.getStep();
-			int stepDansLAnnee = step_actuel%24;
 			for (IActeur acteur : Monde.LE_MONDE.getActeurs()) { // recherche des distributeurs avec la meilleur qualité de chocolat
 				if (acteur instanceof IDistributeurChocolat) { // recherche des distributeurs
 					IDistributeurChocolat dist = (IDistributeurChocolat)acteur;
@@ -66,16 +65,30 @@ public class ClientEuropeen implements IActeur {
 						this.journal.ajouter("Step "+Monde.LE_MONDE.getStep()+" : "+((IActeur)dist).getNom()+" vend "+ c +" a la quantite de "+quantiteEnVente+" a "+dist.getPrix(c));
 						if (quantiteEnVente>0.0) { // dist vend le chocolat recherche
 							double noteQualite = getNoteQualite(dist,c);
-								if (acteur instanceof IPublicitaire) {
-									IPublicitaire pubActeur = (IPublicitaire)acteur;
-									for (Publicite pub : pubActeur.getPubEnCours()) {
-										if (pub.getProduit()==c && pub.getBudget()>0) {
-											noteQualite = getNoteQualite(dist,c) + 5;
+							if (acteur instanceof IPublicitaire) {
+								IPublicitaire pubActeur = (IPublicitaire)acteur;
+								for (Publicite pub : pubActeur.getPubEnCours()) {
+									if (pub.getProduit()==c && pub.getBudget()>0 && this.region == pub.getImpact()) {
+										if (pub.getBudget() < 5000) {
+											noteQualite = getNoteQualite(dist,c) + 1;
+											this.journal.ajouter("-----PUB-----");
+											this.journal.ajouter("Step "+Monde.LE_MONDE.getStep()+" : "+"La qualite du chocolat "+c+" de "+((IActeur)dist).getNom()+" passe de "+getNoteQualite(dist,c)+" à "+noteQualite);
+										} else if (pub.getBudget() >= 5000 && pub.getBudget() < 7500) {
+											noteQualite = getNoteQualite(dist,c) + 2;
+											this.journal.ajouter("-----PUB-----");
+											this.journal.ajouter("Step "+Monde.LE_MONDE.getStep()+" : "+"La qualite du chocolat "+c+" de "+((IActeur)dist).getNom()+" passe de "+getNoteQualite(dist,c)+" à "+noteQualite);
+										} else if (pub.getBudget() >= 7500 && pub.getBudget() < 10000) {
+											noteQualite = getNoteQualite(dist,c) + 3;
+											this.journal.ajouter("-----PUB-----");
+											this.journal.ajouter("Step "+Monde.LE_MONDE.getStep()+" : "+"La qualite du chocolat "+c+" de "+((IActeur)dist).getNom()+" passe de "+getNoteQualite(dist,c)+" à "+noteQualite);
+										} else if (pub.getBudget() >= 10000) {
+											noteQualite = getNoteQualite(dist,c) + 4;
 											this.journal.ajouter("-----PUB-----");
 											this.journal.ajouter("Step "+Monde.LE_MONDE.getStep()+" : "+"La qualite du chocolat "+c+" de "+((IActeur)dist).getNom()+" passe de "+getNoteQualite(dist,c)+" à "+noteQualite);
 										}
 									}
 								}
+							}
 							if ((distributeurDeQualite==null || noteQualite>meilleureQualite) && dist.getPrix(c) < 70 ) { // recherche si le produit est de meilleur qualité
 								distributeurDeQualite = dist;
 								produitQ = c;
@@ -124,6 +137,11 @@ public class ClientEuropeen implements IActeur {
 	/** @author Erwann DEFOY */
 	public double getNoteQualite (IDistributeurChocolat dist, Chocolat c) {
 		return NoteQualite (c);
+	}
+
+
+	private String getRegion() {
+		return this.region ;
 	}
 
 }

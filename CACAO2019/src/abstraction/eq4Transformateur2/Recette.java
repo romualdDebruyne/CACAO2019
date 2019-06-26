@@ -9,13 +9,13 @@ import abstraction.eq7Romu.produits.Feve;
 // Guillaume & Adrien
 public enum Recette {
 	// Définition des recettes
-	HauteQ(Feve.CRIOLLO_HG_EQ, 		1, 5.0, 100.0, Chocolat.HG_E_SHP),
-	MG_E_F(Feve.FORASTERO_MG_EQ, 	1, 3.0, 50.0,  Chocolat.MG_E_SHP),
-	MG_NE_F(Feve.FORASTERO_MG_NEQ, 	1, 2.0, 50.0,  Chocolat.MG_NE_SHP),
-	MG_E_M(Feve.MERCEDES_MG_EQ, 	1, 3.0, 60.0,  Chocolat.MG_E_SHP),
-	MG_NE_M(Feve.MERCEDES_MG_NEQ, 	1, 2.0, 50.0,  Chocolat.MG_NE_SHP),
-	MG_E_T(Feve.TRINITARIO_MG_EQ, 	1, 3.0, 65.0,  Chocolat.MG_E_SHP),
-	MG_NE_T(Feve.TRINITARIO_MG_NEQ, 1, 2.0, 75.0,  Chocolat.MG_NE_SHP);
+	HauteQ(Feve.CRIOLLO_HG_EQ, 		0.90, 3.5, 100.0, Chocolat.HG_E_SHP),
+	MG_E_F(Feve.FORASTERO_MG_EQ, 	0.70, 3.0, 50.0,  Chocolat.MG_E_SHP),
+	MG_NE_F(Feve.FORASTERO_MG_NEQ, 	0.65, 2.0, 50.0,  Chocolat.MG_NE_SHP),
+	MG_E_M(Feve.MERCEDES_MG_EQ, 	0.65, 3.0, 60.0,  Chocolat.MG_E_SHP),
+	MG_NE_M(Feve.MERCEDES_MG_NEQ, 	0.55, 2.0, 50.0,  Chocolat.MG_NE_SHP),
+	MG_E_T(Feve.TRINITARIO_MG_EQ, 	0.60, 3.0, 65.0,  Chocolat.MG_E_SHP),
+	MG_NE_T(Feve.TRINITARIO_MG_NEQ, 0.70, 2.0, 75.0,  Chocolat.MG_NE_SHP);
 	
 	private Feve inputFeve;
 	private Chocolat output;

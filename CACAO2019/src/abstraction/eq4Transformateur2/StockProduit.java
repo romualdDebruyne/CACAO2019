@@ -19,6 +19,8 @@ public class StockProduit<T> {
 	}
 	
 	public void ajouterTas(T type, TasProduit<T> t) {
+		if(t == null)
+			System.err.println("[EQ4] AJOUT D'UN TAS NULL DE " + type);
 		stocks.get(type).add(t);
 	}
 	
@@ -48,7 +50,7 @@ public class StockProduit<T> {
 				qty -= qteAPrendre;
 				prix += qteAPrendre * t.getPrixAuKilo();
 				i++;
-			}
+			}  
 			return prix;
 		}
 	}
@@ -64,8 +66,12 @@ public class StockProduit<T> {
 			double prix = 0;
 			while(qty > 0) {
 				TasProduit<T> t = tas.peek(); // prochain tas à vider
+				if(t == null) {
+					tas.pop();
+					continue;
+				}
 				double qteAPrendre = Math.min(qty, t.getQuantité());
-				t.prendre(qty);
+				t.prendre(qteAPrendre);
 				qty -= qteAPrendre;
 				prix += qteAPrendre * t.getPrixAuKilo();
 				// On supprime le tas s'il est vide
