@@ -11,6 +11,8 @@ import abstraction.eq7Romu.ventesContratCadre.ContratCadre;
 import abstraction.eq7Romu.ventesContratCadre.Echeancier;
 import abstraction.eq7Romu.ventesContratCadre.IVendeurContratCadre;
 import abstraction.eq7Romu.ventesContratCadre.StockEnVente;
+import abstraction.fourni.Entree;
+import abstraction.fourni.Historique;
 import abstraction.fourni.IActeur;
 import abstraction.fourni.Indicateur;
 import abstraction.fourni.Journal;
@@ -36,8 +38,8 @@ public class Producteur2 implements IActeur, IVendeurContratCadre<Feve> {
 	private double beneficesDuMois = 0;
 	private int contratsConclus = 0;
 
-	private double salaire = 2;
-	private double salaireDemande = 1.5;
+	private double salaire = 1;
+	private double salaireDemande = 0.5;
 	private boolean enGreve = false;
 
 
@@ -60,21 +62,22 @@ public class Producteur2 implements IActeur, IVendeurContratCadre<Feve> {
 
 		arbres = new Arbre();
 		arbres.initialise();
-
+		this.gestionnaireFeve.setProduction(this, Feve.FORASTERO_MG_NEQ, 6750000);
+		this.gestionnaireFeve.setStock(this, Feve.FORASTERO_MG_NEQ, 200000000);
 		this.gestionnaireFeve.setProduction(this, Feve.FORASTERO_MG_NEQ, 67500000);
 		this.gestionnaireFeve.setStock(this, Feve.FORASTERO_MG_NEQ, 20000000);
 		this.gestionnaireFeve.setPrix(this, Feve.FORASTERO_MG_NEQ, 1.5);
 
-		this.gestionnaireFeve.setProduction(this, Feve.FORASTERO_MG_EQ, 7500000); // TODO rectifier les productions des
+		this.gestionnaireFeve.setProduction(this, Feve.FORASTERO_MG_EQ, 750000); // TODO rectifier les productions des
 																					// autres feves
 		this.gestionnaireFeve.setStock(this, Feve.FORASTERO_MG_EQ, 20000000);
 		this.gestionnaireFeve.setPrix(this, Feve.FORASTERO_MG_EQ, 1.7);
 
-		this.gestionnaireFeve.setProduction(this, Feve.MERCEDES_MG_NEQ, 7500000);
+		this.gestionnaireFeve.setProduction(this, Feve.MERCEDES_MG_NEQ, 750000);
 		this.gestionnaireFeve.setStock(this, Feve.MERCEDES_MG_NEQ, 20000000);
 		this.gestionnaireFeve.setPrix(this, Feve.MERCEDES_MG_NEQ, 1.3);
 
-		this.gestionnaireFeve.setProduction(this, Feve.MERCEDES_MG_EQ, 750000);
+		this.gestionnaireFeve.setProduction(this, Feve.MERCEDES_MG_EQ, 75000);
 		this.gestionnaireFeve.setStock(this, Feve.MERCEDES_MG_EQ, 2000000);
 		this.gestionnaireFeve.setPrix(this, Feve.MERCEDES_MG_EQ, 1.4);
 
@@ -129,8 +132,11 @@ public class Producteur2 implements IActeur, IVendeurContratCadre<Feve> {
 
 		if (this.numStep == 24) {
 			this.numStep = 1;
-			//numAn+=1;
+			this.actualisationProduction();
 			arbres.actualise();
+			for (Feve f: this.gestionnaireFeve.getFeves()) {
+				this.gestionSurfaceCultivee(f);
+			}	
 			this.actualisationProduction();
 		} else {
 
@@ -415,6 +421,53 @@ public class Producteur2 implements IActeur, IVendeurContratCadre<Feve> {
 		this.gestionnaireFeve.get(produit).getStockIndicateur().retirer(this, livraison);
 
 		return livraison;
+	}
+	
+	public void gestionSurfaceCultivee(Feve f) {
+		if(Monde.LE_MONDE.getStep()>=20) {
+			Historique productionList=this.gestionnaireFeve.get(f).getProductionIndicateur().getHistorique();
+			
+			int currentStep=Monde.LE_MONDE.getStep();
+			int stepVise= currentStep-24; //TODO a modifier
+			System.out.println(productionList.getTaille());
+			
+			int step=0;
+			while (productionList.get(step).getEtape()<stepVise) {
+				step+=1;
+			}
+			double stockCurrentStep = productionList.get(step).getValeur();
+			
+			step=0;
+			while (productionList.get(step).getEtape()<currentStep) {
+				step+=1;
+			}
+			double stockStepAnneeDerniere = productionList.get(step).getValeur();
+
+			if (f==Feve.FORASTERO_MG_EQ) {
+				if  (stockCurrentStep>stockStepAnneeDerniere)
+					Arbre.surface_F_EQ*=0.75;
+				else
+					Arbre.surface_F_EQ*=1.1;
+			}
+			else if (f==Feve.FORASTERO_MG_NEQ) {
+				if  (stockCurrentStep>stockStepAnneeDerniere)
+					Arbre.surface_F_NEQ*=0.75;
+				else
+					Arbre.surface_F_NEQ*=1.1;
+			}
+			else if (f==Feve.MERCEDES_MG_EQ) {
+				if  (stockCurrentStep>stockStepAnneeDerniere)
+					Arbre.surface_M_EQ*=0.75;
+				else
+					Arbre.surface_M_EQ*=1.1;
+			}
+			else {
+				if  (stockCurrentStep>stockStepAnneeDerniere)
+					Arbre.surface_M_NEQ*=0.75;
+				else
+					Arbre.surface_M_NEQ*=1.1;
+			}
+		}
 	}
 }
 

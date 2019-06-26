@@ -13,10 +13,10 @@ public class Arbre {
 
 	private static int NB_PROD = 2;
 	
-	public static final int surface_F_NEQ = 18225;   
-	public static final int surface_F_EQ = 2025;
-	public static final int surface_M_NEQ = 675;
-	public static final int surface_M_EQ = 75;
+	public static int surface_F_NEQ = 18225;   
+	public static int surface_F_EQ = 2025;
+	public static int surface_M_NEQ = 675;
+	public static int surface_M_EQ = 75;
 
 	private HashMap<Feve, List<Integer>> nbArbres;
 	private HashMap<Feve, Integer> nbtot;
@@ -120,7 +120,7 @@ public class Arbre {
 	public double getPrixParStep(Feve f) {
 
 		double surfaceTotale = this.nbtot.get(f);
-		return surfaceTotale * 132; // en dollar}
+		return surfaceTotale * 32; // en dollar
 
 	}
 }
