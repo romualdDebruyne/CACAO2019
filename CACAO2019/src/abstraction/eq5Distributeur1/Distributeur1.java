@@ -61,7 +61,7 @@ public class Distributeur1 implements IActeur, IAcheteurContratCadre, IDistribut
 	 * @author Erine DUPONT & Estelle BONNET
 	 */
 	public Distributeur1() {
-		this(0.6, 1000000.0); // La marge doit être en pourcentage !!! 5% > 0.05
+		this(0.4, 1000000.0); // La marge doit être en pourcentage !!! 5% > 0.05
 	}
 
 	/**
@@ -70,8 +70,8 @@ public class Distributeur1 implements IActeur, IAcheteurContratCadre, IDistribut
 	public Distributeur1(double marge, Double soldeInitial) {
 
 		this.marge = marge;   // La marge doit être en pourcentage !!! 5% > 0.05
-		this.coutfixe = 0.17;	
-		this.coutsdestockage = 0.1;
+		this.coutfixe = 0.17;	// en pourcentage
+		this.coutsdestockage = 0.01;// 20 centimes par kilo
 		this.stock = new Stock();
 		stock.ajouter(Chocolat.HG_E_SHP, 150000.0, this);
 		stock.ajouter(Chocolat.MG_E_SHP, 55000.0, this);
@@ -118,7 +118,9 @@ public class Distributeur1 implements IActeur, IAcheteurContratCadre, IDistribut
 		//Prise en compte de la pérénité des stocks
 		this.stock.perenniteStock(this.stock.getStock(), this);
 		//Prise en compte du coût du stock
-
+		this.soldeBancaire.retirer(this, this.stock.getStockTotal()*this.coutsdestockage);
+		this.indicateursolde.retirer(this, this.stock.getStockTotal()*this.coutsdestockage);
+		
 		//------------------ Publicité -----------------------------------------------------
 		//Janvier 	Step 1 à 4					Juillet 	Step 25 à 28
 		//Février 	Step 5 à 8					Août		Step 29 à 32
@@ -128,28 +130,20 @@ public class Distributeur1 implements IActeur, IAcheteurContratCadre, IDistribut
 		//Juin		Step 21 à 24				Décembre	Step 45 à 48
 		int step_actuel = Monde.LE_MONDE.getStep();
 		int stepDansLAnnee = step_actuel%24;
-		publicites.clear();
+		this.journal.ajouter("-------------------------------------------- PUB -------------------------------------------------------------------------------------------");
 		if (stepDansLAnnee == JANVIER2 || stepDansLAnnee == FEVRIER1) {
 			Publicite pub1 = new Publicite(Chocolat.HG_E_SHP, 10000, "Europe");
-			this.journal.ajouter("-------------------------------------------- PUB -------------------------------------------------------------------------------------------");
 			this.journal.ajouter("Publicité de la Saint-Valentin:");
 			this.journal.ajouter(pub1.toString());
-			publicites.clear();
-			publicites.add(pub1);
 		}
 		if (stepDansLAnnee == MARS1 || stepDansLAnnee == MARS2 || stepDansLAnnee == AVRIL1) {
 			Publicite pub1 = new Publicite(Chocolat.HG_E_SHP, 7000, "Europe");
 			Publicite pub2 = new Publicite(Chocolat.MG_E_SHP, 5000, "Europe");
 			Publicite pub3 = new Publicite(Chocolat.MG_NE_SHP, 3000, "Europe");
-			this.journal.ajouter("-------------------------------------------- PUB -------------------------------------------------------------------------------------------");
 			this.journal.ajouter("Publicité de Pâques:");
 			this.journal.ajouter(pub1.toString());
 			this.journal.ajouter(pub2.toString());
 			this.journal.ajouter(pub3.toString());
-			publicites.clear();
-			publicites.add(pub1);
-			publicites.add(pub2);
-			publicites.add(pub3);
 		}
 		if (stepDansLAnnee == NOVEMBRE1 || stepDansLAnnee == NOVEMBRE2 || stepDansLAnnee == DECEMBRE1 
 				|| stepDansLAnnee == DECEMBRE2) {
@@ -157,17 +151,15 @@ public class Distributeur1 implements IActeur, IAcheteurContratCadre, IDistribut
 			Publicite pub2 = new Publicite(Chocolat.MG_E_SHP,5000,"Europe");
 			Publicite pub3 = new Publicite(Chocolat.MG_NE_HP,5000,"Europe");
 			Publicite pub4 = new Publicite(Chocolat.MG_NE_SHP,5000,"Europe");
-			this.journal.ajouter("-------------------------------------------- PUB -------------------------------------------------------------------------------------------");
+			publicites.clear();
+			publicites.add(pub2);
+			publicites.add(pub3);
+			this.journal.ajouter("-------------------------------------- PUB ---------------------------------------------");
 			this.journal.ajouter("Publicité de Noël:");
 			this.journal.ajouter(pub1.toString());
 			this.journal.ajouter(pub2.toString());
 			this.journal.ajouter(pub3.toString());
 			this.journal.ajouter(pub4.toString());
-			publicites.clear();
-			publicites.add(pub1);
-			publicites.add(pub2);
-			publicites.add(pub3);
-			publicites.add(pub4);
 		}
 	}
 
@@ -185,16 +177,13 @@ public class Distributeur1 implements IActeur, IAcheteurContratCadre, IDistribut
 		// On va créer un nouveau contrat cadre 
 		ContratCadre<Chocolat> ncc = null;
 		// Au préalable, il faut identifier produit, quantité, vendeur, acheteur
-
 		// On détermine combien il resterait sur le compte si on soldait tous les contrats en cours.
 		double solde = this.soldeBancaire.getCompteBancaire();
 		for (ContratCadre<Chocolat> cc : this.contratsEnCours) {
 			solde = solde - cc.getMontantRestantARegler();
 		}
-
 		// On ne cherche pas a établir d'autres contrats d'achat si le compte bancaire est trop bas
 		if (solde>5000.0) { 
-
 			//Choix du produit : on choisit un produit au hasard parmi tous les produits
 			ArrayList<Chocolat> produits = new ArrayList<Chocolat>();
 			produits.add(Chocolat.HG_E_SHP);
@@ -202,8 +191,6 @@ public class Distributeur1 implements IActeur, IAcheteurContratCadre, IDistribut
 			produits.add(Chocolat.MG_NE_HP);
 			produits.add(Chocolat.MG_NE_SHP);
 			Chocolat produit = produits.get((int) Math.random()*produits.size());
-
-
 			//Choix quantité : on choisit le vendeur ayant la plus grande quantité du produit
 			//Choix acteur
 			List<IVendeurContratCadre<Chocolat>> vendeurs = new ArrayList<IVendeurContratCadre<Chocolat>>();
@@ -288,17 +275,17 @@ public class Distributeur1 implements IActeur, IAcheteurContratCadre, IDistribut
 				IVendeurContratCadre<Chocolat> vendeur_choisi = vendeurs.get(0); 
 				double stock_vendeur = vendeur_choisi.getStockEnVente().get(produit);
 				double prix_vendeur = vendeur_choisi.getPrix(produit, stock_vendeur);
-				this.journal.ajouter("Le prix de " + vendeur_choisi +" est de " + prix_vendeur + " €");
+				this.journal.ajouter("Le prix initial est de " + prix_vendeur);
 				for (IVendeurContratCadre<Chocolat> vendeur : vendeurs) {
 					double stock = vendeur.getStockEnVente().get(produit);
 					double prix = vendeur.getPrix(produit, stock);
-					this.journal.ajouter("Le prix de " + vendeur + " est de " + prix + " €");;
+					this.journal.ajouter("Le prix de " + vendeur + " est de " + prix);;
 					if (prix < prix_vendeur) {
 						vendeur_choisi = vendeur;
 						prix_vendeur = prix;
-						this.journal.ajouter("Le prix est plus bas, le vendeur est donc " + vendeur_choisi);
+						this.journal.ajouter("Le prix est meilleur, le vendeur est donc " + vendeur_choisi);
 					} else {
-						this.journal.ajouter("Le prix est plus élevé, le vendeur reste " + vendeur_choisi);
+						this.journal.ajouter("Le prix est moins bon, le vendeur reste " + vendeur_choisi);
 					}
 				}
 
@@ -326,23 +313,23 @@ public class Distributeur1 implements IActeur, IAcheteurContratCadre, IDistribut
 					}
 				}
 				if (qrestante >= this.stock.get(produit)) {
-					if (vendeur_choisi.getStockEnVente().get(produit) >= qrestante + 50000) {
-						quantite = qrestante + 50000;
-					} else if (vendeur_choisi.getStockEnVente().get(produit) >= qrestante + 20000){
-						quantite = vendeur_choisi.getStockEnVente().get(produit) + 20000;
+					if (vendeur_choisi.getStockEnVente().get(produit) >= qrestante + 5000) {
+						quantite = qrestante + 5000;
+					} else if (vendeur_choisi.getStockEnVente().get(produit) >= qrestante + 2000){
+						quantite = vendeur_choisi.getStockEnVente().get(produit) + 2000;
 					} else {
 						quantite = vendeur_choisi.getStockEnVente().get(produit);
 					}
 				} else {
-					if (this.stock.get(produit) <= 50000) {
-						if (vendeur_choisi.getStockEnVente().get(produit) >= 40000) {
-							quantite = 40000;
+					if (this.stock.get(produit) <= 5000) {
+						if (vendeur_choisi.getStockEnVente().get(produit) >= 4000) {
+							quantite = 4000;
 						} else {
 							quantite = vendeur_choisi.getStockEnVente().get(produit);
 						}
 					} else {
-						if (vendeur_choisi.getStockEnVente().get(produit) >= 20000) {
-							quantite = 20000;
+						if (vendeur_choisi.getStockEnVente().get(produit) >= 2000) {
+							quantite = 2000;
 						} else {
 							quantite = vendeur_choisi.getStockEnVente().get(produit);
 						}
@@ -482,66 +469,67 @@ public class Distributeur1 implements IActeur, IAcheteurContratCadre, IDistribut
 	 * @author Imane ZRIAA
 	 * @author2 Erine DUPONT
 	 */
+
 	public void proposerPrixAcheteur(ContratCadre cc) {
 		double prixVendeur = cc.getPrixAuKilo();
 		/* ------------------------------------------------------------------------------------------
 		 * VERSION IMANE
 		 * if (Math.random()<0.30) { 
-			cc.ajouterPrixAuKilo(cc.getPrixAuKilo());
-		} else {
-			cc.ajouterPrixAuKilo((prixVendeur*(0.9+Math.random()*0.1))); // Rabais de 10% max
-		}*/
+		cc.ajouterPrixAuKilo(cc.getPrixAuKilo());
+	} else {
+		cc.ajouterPrixAuKilo((prixVendeur*(0.9+Math.random()*0.1))); // Rabais de 10% max
+	}*/
 		/* ------------------------------------------------------------------------------------------
 		 * V1 ERINE
-		 if (5 < prixVendeur && prixVendeur < 10 && stock.get((Chocolat) cc.getProduit())<1000) {
-			cc.ajouterPrixAuKilo(prixVendeur*0.8);
-			this.journal.ajouter("Nous proposons un prix de " + prixVendeur*0.8);
-		} else if (5 < prixVendeur && prixVendeur < 10 && stock.get((Chocolat) cc.getProduit())>=1000) {
-			cc.ajouterPrixAuKilo(prixVendeur*0.6);
-			this.journal.ajouter("Nous proposons un prix de " + prixVendeur*0.6);
-		} else if (prixVendeur <= 5) {
-			cc.ajouterPrixAuKilo(prixVendeur);
-			this.journal.ajouter("Nous proposons un prix de " + prixVendeur);
-		} else {
-			this.journal.ajouter("Nous refusons le prix de " + prixVendeur);
-		} */
+	 if (5 < prixVendeur && prixVendeur < 10 && stock.get((Chocolat) cc.getProduit())<1000) {
+		cc.ajouterPrixAuKilo(prixVendeur*0.8);
+		this.journal.ajouter("Nous proposons un prix de " + prixVendeur*0.8);
+	} else if (5 < prixVendeur && prixVendeur < 10 && stock.get((Chocolat) cc.getProduit())>=1000) {
+		cc.ajouterPrixAuKilo(prixVendeur*0.6);
+		this.journal.ajouter("Nous proposons un prix de " + prixVendeur*0.6);
+	} else if (prixVendeur <= 5) {
+		cc.ajouterPrixAuKilo(prixVendeur);
+		this.journal.ajouter("Nous proposons un prix de " + prixVendeur);
+	} else {
+		this.journal.ajouter("Nous refusons le prix de " + prixVendeur);
+	} */
 		/* ------------------------------------------------------------------------------------------
-		 V2 ERINE
+	 V2 ERINE
 		 */
 		if (cc.getProduit().equals(Chocolat.HG_E_SHP)) {
-			if (20.0 < prixVendeur && prixVendeur <= 70.0 && stock.get((Chocolat) cc.getProduit()) < 10000) {
+			if (20 < prixVendeur && prixVendeur <= 70 && stock.get((Chocolat) cc.getProduit()) < 10000) {
 				cc.ajouterPrixAuKilo(prixVendeur*0.95);
 				this.journal.ajouter("Nous proposons un prix de " + prixVendeur*0.95 + " €");
-			} else if (20.0 < prixVendeur && prixVendeur <= 70.0 && stock.get((Chocolat) cc.getProduit())>=10000) {
+			} else if (20 < prixVendeur && prixVendeur <= 70 && stock.get((Chocolat) cc.getProduit())>=10000) {
 				cc.ajouterPrixAuKilo(prixVendeur*0.8);
 				this.journal.ajouter("Nous proposons un prix de " + prixVendeur*0.8 + " €");
-			} else if (prixVendeur <= 20.0) {
+			} else if (prixVendeur <= 20) {
 				cc.ajouterPrixAuKilo(prixVendeur);
 				this.journal.ajouter("Nous proposons un prix de " + prixVendeur + " €");
 			} else {
 				this.journal.ajouter("Nous refusons le prix de " + prixVendeur + " €" );
 			}	
 		} else if (cc.getProduit().equals(Chocolat.MG_E_SHP) || cc.getProduit().equals(Chocolat.MG_NE_SHP)) {
-			if (10.0 < prixVendeur && prixVendeur <= 50.0 && stock.get((Chocolat) cc.getProduit()) < 10000) {
+			if (10 < prixVendeur && prixVendeur <= 50 && stock.get((Chocolat) cc.getProduit()) < 10000) {
 				cc.ajouterPrixAuKilo(prixVendeur*0.8);
 				this.journal.ajouter("Nous proposons un prix de " + prixVendeur*0.8 + " €");
-			} else if (10.0 < prixVendeur && prixVendeur <= 50.0 && stock.get((Chocolat) cc.getProduit())>=10000) {
-				cc.ajouterPrixAuKilo(prixVendeur*0.7);
+			} else if (10 < prixVendeur && prixVendeur <= 50 && stock.get((Chocolat) cc.getProduit())>=10000) {
+				cc.ajouterPrixAuKilo(prixVendeur*0.6);
 				this.journal.ajouter("Nous proposons un prix de " + prixVendeur*0.6 + " €");
-			} else if (prixVendeur <= 10.0) {
+			} else if (prixVendeur <= 10) {
 				cc.ajouterPrixAuKilo(prixVendeur);
 				this.journal.ajouter("Nous proposons un prix de " + prixVendeur + " €");
 			} else {
 				this.journal.ajouter("Nous refusons le prix de " + prixVendeur + " €");
 			}	
 		} else if (cc.getProduit().equals(Chocolat.MG_NE_HP)) {
-			if (10.0 < prixVendeur && prixVendeur <= 40.0 && stock.get((Chocolat) cc.getProduit()) < 10000) {
+			if (10 < prixVendeur && prixVendeur <= 40 && stock.get((Chocolat) cc.getProduit()) < 10000) {
 				cc.ajouterPrixAuKilo(prixVendeur*0.8);
 				this.journal.ajouter("Nous proposons un prix de " + prixVendeur*0.8 + " €");
-			} else if (10.0 < prixVendeur && prixVendeur <= 40.0 && stock.get((Chocolat) cc.getProduit())>=10000) {
+			} else if (10 < prixVendeur && prixVendeur <= 40 && stock.get((Chocolat) cc.getProduit())>=10000) {
 				cc.ajouterPrixAuKilo(prixVendeur*0.6);
 				this.journal.ajouter("Nous proposons un prix de " + prixVendeur*0.6 + " €");
-			} else if (prixVendeur <= 10.0) {
+			} else if (prixVendeur <= 10) {
 				cc.ajouterPrixAuKilo(prixVendeur);
 				this.journal.ajouter("Nous proposons un prix de " + prixVendeur + " €");
 			} else {
@@ -608,6 +596,10 @@ public class Distributeur1 implements IActeur, IAcheteurContratCadre, IDistribut
 		return res;
 	}
 
+	/**
+	 * @author Estelle BONNET
+	 * @author2 Erine DUPONT
+	 */
 	/**
 	 * @author Estelle BONNET
 	 * @author2 Erine DUPONT
@@ -705,4 +697,3 @@ public class Distributeur1 implements IActeur, IAcheteurContratCadre, IDistribut
 		return publicites;
 	}
 }
-

@@ -82,5 +82,23 @@ public enum Recette {
 	public double getQteProductible(double cout) {
 		 return Math.max(0, (cout - getCoutFixe()) / getCoutParKgProduit());
 	}
+	
+	// Kelian
+	/** Renvoie la recette que l'on doit utiliser pour produire un type de chocolat au moindre coût, à l'aide du dernier prix d'achat de chaque fève. */
+	protected static Recette getRecetteMoindreCout(Chocolat c, Transformateur2 t2) {
+		List<Recette> recettes = Recette.getRecettes(c);
+		double minPrix = Double.MAX_VALUE;
+		Recette minPrixRecette = null;
+		for(Recette r : recettes) {
+			double prix = r.getInputParKgProduit() * t2.getAcheteurCC().getDernierPrixAchat(r.getInputFeve());
+			if(prix < minPrix) {
+				minPrix = prix;
+				minPrixRecette = r;
+			}
+		}
+		return minPrixRecette;
+	}
+		
+
 
 }

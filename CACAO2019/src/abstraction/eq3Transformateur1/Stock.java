@@ -17,7 +17,7 @@ import abstraction.eq7Romu.produits.Feve;
  */
 public class Stock<T> {
 
-	// T est le chocolat ou la feve ; lui est associe une quantite en stock, en kg
+	// T est le chocolat ou la feve ; lui est associe une liste de lots
 	HashMap<T, Collection<Lot>> stock;
 	int numLot;
 	int peremptionFeve;

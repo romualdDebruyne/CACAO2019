@@ -203,8 +203,6 @@ public class Client1 implements IActeur{
 		IDistributeurChocolat D = null ;
 		int step = Monde.LE_MONDE.getStep();	
 		this.setDistributeurs();
-		System.out.println (Distributeurs);
-		System.out.println(Distributeurs);
 		List<Double> Notes = this.Offres();
 		double quantitevoulue = quantitemoyenne * temporalite.get(step);
 		
@@ -236,9 +234,6 @@ public class Client1 implements IActeur{
 			else {
 				T.vendre(this.unique, T.getStockEnVente().get(this.unique));
 				
-				System.out.println (Distributeurs);
-				System.out.println ( "le distributeur est "+T);
-				System.out.println  ( " l'indice est"+Distributeurs.indexOf(T));
 				Notes.remove(Distributeurs.indexOf(T));
 				Distributeurs.remove(T);
 				this.journal.ajouter(""+T.getStockEnVente().get(this.unique));	

@@ -10,9 +10,6 @@ import abstraction.fourni.Monde;
 public class HistoriqueDemande {
 	private HashMap<Integer, HashMap<Chocolat,TasProduit<Chocolat>>> historique;
 	
-	// Mémoire de notre estimateur de demande (en années). On utilise les n dernières années pour estimer les demandes futures
-	private static final int MEMOIRE_ESTIMATEUR_ANNEES = 5; 
-	
 	public HistoriqueDemande() {
 		historique = new HashMap<Integer, HashMap<Chocolat, TasProduit<Chocolat>>>();
 	}
@@ -33,7 +30,7 @@ public class HistoriqueDemande {
 	// Kelian
 	/** (polymorphisme) Renvoie la demande pour un type de chocolat donné, à un certain step d'un nombre d'année donné dans le passé */
 	public TasProduit<Chocolat> getDemande(int yearsBack, int stepInYear, Chocolat type) {
-		return getDemande(yearsBack * Transformateur2.STEPS_PAR_ANNEE - stepInYear, type);
+		return getDemande(yearsBack * ConfigEQ4.STEPS_PAR_ANNEE - stepInYear, type);
 	}	
 	
 	/** Renvoie la demande pour un type de chocolat donné à un nombre de steps donné dans le passé */
@@ -61,8 +58,8 @@ public class HistoriqueDemande {
 	public double estimerDemande(int stepsInFuture, Chocolat type) {
 		// On commence par récupérer les données des années précédentes
 		List<TasProduit<Chocolat>> echantillons = new ArrayList<TasProduit<Chocolat>>();
-		for(int i = 1; i <= MEMOIRE_ESTIMATEUR_ANNEES && Monde.LE_MONDE.getStep() > i*Transformateur2.STEPS_PAR_ANNEE; i++) {
-			TasProduit<Chocolat> e = getDemande(i * Transformateur2.STEPS_PAR_ANNEE, type);
+		for(int i = 1; i <= ConfigEQ4.MEMOIRE_ESTIMATEUR_ANNEES && Monde.LE_MONDE.getStep() > i*ConfigEQ4.STEPS_PAR_ANNEE; i++) {
+			TasProduit<Chocolat> e = getDemande(i * ConfigEQ4.STEPS_PAR_ANNEE, type);
 			echantillons.add(e);
 		}
 		
@@ -76,17 +73,6 @@ public class HistoriqueDemande {
 		for(int i = 0; i < n; i++)
 			m += echantillons.get(i).getQuantité() / n;
 		return m;
-		
-		/* 
-		double moyenneEmpirique = 0, varEmpiriqueModifiee = 0;
-		for(int i = 0; i < n; i++)
-			moyenneEmpirique += echantillons.get(i).getQuantité() / n;
-		for(int i = 0; i < n; i++)
-			varEmpiriqueModifiee += Math.pow(echantillons.get(i).getQuantité() - moyenneEmpirique, 2) / (n-1);
-			
-		// Estimation utilisée : borne haute de l'intervalle de confiance à 95% pour la moyenne
-		*/
-
 	}
 }
 

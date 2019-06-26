@@ -65,7 +65,7 @@ public class Stock {
 			exces = 0;
 			exces = stock.get(chocolat) - this.stockDebutStep.get(chocolat);
 			if (exces>0) {
-				this.enlever(chocolat, exces*0.1, acteur);
+				this.enlever(chocolat, exces*0.03, acteur);
 			}
 		}
 	}

@@ -18,10 +18,10 @@ public class Producteur1Interne implements IActeur /* , IVendeurCacaoAleatoire *
 
 
 	public static int COUT_VARIABLE_STOCK = 0;
-	public static int nbrEmployes = 20 ;
-	public static int salaire= 130 ;
+	public static int nbrEmployes = 5 ;
+	public static int salaire= 60 ;
 	public static int masseSalariale = nbrEmployes*salaire;
-	public static int COUT_FIXE = 00;
+	public static int COUT_FIXE = 0;
 
  
 	
@@ -34,10 +34,10 @@ public class Producteur1Interne implements IActeur /* , IVendeurCacaoAleatoire *
 	protected Plantation plantationForastero;
 	protected Plantation plantationTrinitario;
 	 
-	protected double recolteCriollo ;
-	protected double recolteForastero ;
-	protected double recolteTrinitario ;
-    protected List<ContratCadre<Feve>> contratEnCours;  //
+	protected double recolteCriollo ; // valeur mise à jour en fct de la plantation à chaque step 
+	protected double recolteForastero ; // valeur mise à jour en fct de la plantation à chaque step 
+	protected double recolteTrinitario ; // valeur mise à jour en fct de la plantation à chaque step 
+    protected List<ContratCadre<Feve>> contratEnCours;  
     protected List<Double>historiqueSoldeBancaire;
 
 	//BEGIN ANTI 
@@ -111,7 +111,7 @@ public class Producteur1Interne implements IActeur /* , IVendeurCacaoAleatoire *
 		
 		
 		this.historiqueContrats=new HashMap<Integer, ContratCadre<Feve>>();
-		
+		 
 		stockCriollo=new Stock(Feve.CRIOLLO_HG_EQ,this);
 		stockForastero=new Stock(Feve.FORASTERO_MG_NEQ,this);
 		stockTrinitario=new Stock(Feve.TRINITARIO_MG_NEQ,this);
@@ -225,6 +225,9 @@ public class Producteur1Interne implements IActeur /* , IVendeurCacaoAleatoire *
 		// END Nas
 		//BEGIN ANTI 
 		updatePlantation();
+		if (this.soldeBancaire.getValeur()<0 && this.historiqueSoldeBancaire.get(this.historiqueSoldeBancaire.size()-1)-this.historiqueSoldeBancaire.get(this.historiqueSoldeBancaire.size()-2)<0&&this.nbrEmployes>0) {
+			this.nbrEmployes-=1;
+		}
 		//END ANTI
 		//BEGIN MANON
 		this.journal1.ajouter("NOUVEAU STEP");
@@ -449,14 +452,13 @@ public class Producteur1Interne implements IActeur /* , IVendeurCacaoAleatoire *
 	public void updatePrix() {	 //Actualise les prix en fonction de des résultat de prixAboutissantaCc
 		for (Feve produit: this.getFeve()) {
 	if(this.getHistoriqueSoldeBancaire().size()>2) { // On regarde si on est pas au premier ou deuxième step
-			if(this.moyenneDemande(produit)*2>this.getStockI(produit).getValeur() ) { // regarde si l'offre est inférieur à la demande
+			if(this.moyenneDemande(produit)/2>this.getStockI(produit).getValeur() && this.prixAuKilo.get(produit)<15) { // regarde si l'offre est inférieur à la demande
 				this.prixAuKilo.put(produit, this.getPrixAuKilo().get(produit)+0.1);} //augmentation des prix
 			
 			else {
-				if(this.moyennePrixNonAccepte(produit)<this.getPrixAuKilo().get(produit)) { //On regarde la moyenne des prix n'ayant pas engendré de Cc si elle est inférieur au prix proposé
+				if(this.moyennePrixNonAccepte(produit)<this.getPrixAuKilo().get(produit)){ //On regarde la moyenne des prix n'ayant pas engendré de Cc si elle est inférieur au prix proposé
 
-					if(this.getStockI(produit).getValeur()*(this.getPrixAuKilo().get(produit)-0.1)>this.getCOUT_FIXE()/3+this.getStockI(produit).getValeur()*this.getCOUT_VARIABLE_STOCK()
-							||this.getStockI(produit).getValeur()*(this.getPrixAuKilo().get(produit)-0.1)>0) {// On vérifie qu'on ne vend pas à perte
+					if(this.getStockI(produit).getValeur()*(this.getPrixAuKilo().get(produit)-0.1)>this.masseSalariale*this.nbrEmployes/3+this.getStockI(produit).getValeur()*this.getCOUT_VARIABLE_STOCK()) {// On vérifie qu'on ne vend pas à perte
 	//	System.out.println("put "+(this.getPrixAuKilo().get(produit)-0.1));
 	//	if (this.getPrixAuKilo().get(produit)-0.1<0.0) {
 	//		System.exit(0);
@@ -520,28 +522,53 @@ public class Producteur1Interne implements IActeur /* , IVendeurCacaoAleatoire *
 	//begin Pauline
 	 public void updatePlantation() {
 		int step = LE_MONDE.getStep();
-		for (Feve feve:getFeve()) {
-			setRecolte(feve,getPlantation(feve).getRecolte(step));
+		for (Feve feve : getFeve()) {
+			setRecolte(feve, getPlantation(feve).getRecolte(step));
 			if(step%unAnEnSteps == 0){
 				double plantationActuelle = getPlantation(feve).getInd().getValeur();
 				double demande = getPlantation(feve).moyenneDemande();
 
+
+				double stock = this.getStock(feve).getStock(step);
+			
+				getPlantation(feve).updatePlantation(step,getPlantation(feve).moyenneDemande()*1/40);
+				setRecolte(feve,getPlantation(feve).getRecolte(step));
+				getSoldeBancaire().retirer(this, coutPlanter);
+
+
+	
+				
+
 				if (plantationActuelle - demande < plantationActuelle*0.05 && plantationActuelle - demande>0) {
 					double aPlanter = plantationActuelle*0.05/40; // pour pas avoir tout pile assez, on garde 5% de marge
-					getPlantation(feve).updatePlantation(step, aPlanter);
-					setRecolte(feve,getPlantation(feve).getRecolte(step));
-					getSoldeBancaire().retirer(this, coutPlanter*aPlanter);
+					if (stock - aPlanter > 0) {
+						getPlantation(feve).updatePlantation(step,0);
+						setRecolte(feve,getPlantation(feve).getRecolte(step));
+					} else {
+						double newAPlanter = aPlanter - stock ;
+						getPlantation(feve).updatePlantation(step, newAPlanter);
+						setRecolte(feve,getPlantation(feve).getRecolte(step));
+						getSoldeBancaire().retirer(this, coutPlanter*newAPlanter);
+					}
 				} else if (plantationActuelle - demande <0) {
 					double aPlanter = (demande - plantationActuelle)*1.05/40; // on plante de quoi subvenir a la demande + 5% pour avir de la marge 
-					getPlantation(feve).updatePlantation(step, aPlanter);
-					setRecolte(feve,getPlantation(feve).getRecolte(step));
-					getSoldeBancaire().retirer(this, coutPlanter*aPlanter);
+					if (stock - aPlanter > 0) {
+						getPlantation(feve).updatePlantation(step,0);
+						setRecolte(feve,getPlantation(feve).getRecolte(step));
+					} else {
+						double newAPlanter = aPlanter - stock ;
+						getPlantation(feve).updatePlantation(step, newAPlanter);
+						setRecolte(feve,getPlantation(feve).getRecolte(step));
+						getSoldeBancaire().retirer(this, coutPlanter*newAPlanter);
+					}
 				} else {
 					getPlantation(feve).updatePlantation(step,0);
 					setRecolte(feve,getPlantation(feve).getRecolte(step));
 				}
+
 			} else{
 				getPlantation(feve).updatePlantation(step,0);
+
 			}
 		}
 	}

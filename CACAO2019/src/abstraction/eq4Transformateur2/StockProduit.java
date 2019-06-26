@@ -67,16 +67,20 @@ public class StockProduit<T> {
 			while(qty > 0) {
 				TasProduit<T> t = tas.peek(); // prochain tas à vider
 				if(t == null) {
-					tas.pop();
-					continue;
+					if(tas.contains(t)) 
+						tas.pop();
+					else
+						qty = 0;
 				}
-				double qteAPrendre = Math.min(qty, t.getQuantité());
-				t.prendre(qteAPrendre);
-				qty -= qteAPrendre;
-				prix += qteAPrendre * t.getPrixAuKilo();
-				// On supprime le tas s'il est vide
-				if(t.getQuantité() < 0.01)
-					tas.pop();
+				else {
+					double qteAPrendre = Math.min(qty, t.getQuantité());
+					t.prendre(qteAPrendre);
+					qty -= qteAPrendre;
+					prix += qteAPrendre * t.getPrixAuKilo();
+					// On supprime le tas s'il est vide
+					if(t.getQuantité() < 0.01)
+						tas.pop();
+				}
 			}
 			return prix;
 		}
